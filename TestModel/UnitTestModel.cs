@@ -66,6 +66,16 @@ namespace TestModel
             Assert.IsNotNull(testFolder, "Folder niet aangemaakt");
             Assert.IsNull(testFolder.Parent, "Parent recursie!");
         }
+        [TestMethod]
+        public async Task FolderVMaddChild()
+        {
+            var testFolder = new FolderVM("TestParent", null);
+            testFolder.AddChild("testChild");
+            await testFolder.Save();
+            var test = new FolderVM("TestParent", null);
+            Assert.IsNotNull(test, "Folder niet aangemaakt");
+            Assert.AreEqual("testChild", test.Children[0].Name, false);
+        }
     }
 }
 

@@ -57,15 +57,15 @@ namespace PopMailDemo.MVVM.ViewModel
             }
             return true;
         }
-        private List<FolderVM> ReadChildrenFromDb()
+        private async Task<List<FolderVM>> ReadChildrenFromDb()
         {
             var db = Database.DbConnection;
             var ChildList = new List<FolderVM>();
+            var Children = await db.Table<Folder>().Where(f => f.Parent == this.folder.Id).ToListAsync();
 
-            var Children = db.QueryAsync<int>(string.Format("select Id from Folder where Parent = {0}", this.folder.Id)).Result.ToList<int>();
-            foreach (int ChildId in Children)
+            foreach (Folder Childfolder in Children)
             {
-                var Child = new FolderVM(ChildId);
+                var Child = new FolderVM(Childfolder.Id);
                 ChildList.Add(Child);
             }
             return ChildList;
@@ -78,7 +78,7 @@ namespace PopMailDemo.MVVM.ViewModel
             {
                 this.parent = new FolderVM(this.folder.Parent);
             }
-            children = ReadChildrenFromDb();
+            children = ReadChildrenFromDb().Result;
         }
         public FolderVM(int Id)
         {
@@ -95,7 +95,7 @@ namespace PopMailDemo.MVVM.ViewModel
                 this.parent = new FolderVM(this.folder.Parent);
             }
             
-            children = ReadChildrenFromDb();
+            children = ReadChildrenFromDb().Result;
         }
         public FolderVM(string Name, FolderVM Parent)
         {
@@ -116,6 +116,10 @@ namespace PopMailDemo.MVVM.ViewModel
             {
                 this.folder = new Folder();
                 this.folder.Name = Name;
+            }
+            else
+            {
+                children = ReadChildrenFromDb().Result;
             }
             if (Parent != null)
             {
@@ -176,7 +180,6 @@ namespace PopMailDemo.MVVM.ViewModel
         public FolderVM AddChild(string Name)
         {
             var Child = new FolderVM(Name, this);
-            children.Add(Child);
             return Child;
         }
         public void AddChild(FolderVM Child)
@@ -227,32 +230,42 @@ namespace PopMailDemo.MVVM.ViewModel
         }
         public async Task Save()
         {
-            if (this.folder != null)
+            if (children.Count > 0)
             {
-                if (CheckParent())
+                foreach (FolderVM Child in children)
                 {
-                    var db = DataAcces.Database.DbConnection;
-                    if (this.Parent != null)
+                    await Child.Save();
+                }
+            }
+            else
+            {
+                if (this.folder != null)
+                {
+                    if (CheckParent())
                     {
-                        var children = new List<FolderVM>();
-                        children.Add(this);
-                        var Saved = await this.Parent.Save(children);
-                        if (Saved)
+                        var db = DataAcces.Database.DbConnection;
+                        if (this.Parent != null)
                         {
-                            this.folder.Parent = Parent.folder.Id;
+                            var parentage = new List<FolderVM>();
+                            parentage.Add(this);
+                            var Saved = await this.Parent.Save(parentage);
+                            if (Saved)
+                            {
+                                this.folder.Parent = Parent.folder.Id;
+                            }
+                            else
+                            {
+                                this.parent = null;
+                            }
+                        }
+                        if (this.folder.Id == 0)
+                        {
+                            var i = await db.InsertAsync(folder);
                         }
                         else
                         {
-                            this.parent = null;
+                            var i = await db.UpdateAsync(folder);
                         }
-                    }
-                    if (this.folder.Id == 0)
-                    {
-                        var i = await db.InsertAsync(folder);
-                    }
-                    else
-                    {
-                        var i = await db.UpdateAsync(folder);
                     }
                 }
             }

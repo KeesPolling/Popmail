@@ -42,7 +42,7 @@ namespace PopMailDemo.MVVM.ViewModel
                 if (this.emailProvider != null)
                 {
                     this.emailProvider.Name = value;
-                    if (this.emailProvider.InFolder == 0)
+                    if (this.emailProvider.InFolderId == 0)
                     {
                         FolderVM rootFolder = new FolderVM(value, null);
                         inFolder = new FolderVM("In", rootFolder);
