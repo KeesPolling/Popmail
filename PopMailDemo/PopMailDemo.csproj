@@ -111,6 +111,10 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Pages\Common\NavigationHelper.cs" />
+    <Compile Include="Pages\Common\ObservableDictionary.cs" />
+    <Compile Include="Pages\Common\RelayCommand.cs" />
+    <Compile Include="Pages\Common\SuspensionManager.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -158,7 +162,11 @@
     <Reference Include="SQLiteNetExtensions">
       <HintPath>..\packages\SQLiteNetExtensions.1.2.2\lib\portable-net45+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1\SQLiteNetExtensions.dll</HintPath>
     </Reference>
+    <Reference Include="WinRTXamlToolkit">
+      <HintPath>..\packages\WinRTXamlToolkit.Windows.1.8.1.0\lib\netcore451\WinRTXamlToolkit.dll</HintPath>
+    </Reference>
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
     <VisualStudioVersion>12.0</VisualStudioVersion>
   </PropertyGroup>

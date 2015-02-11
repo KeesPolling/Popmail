@@ -25,6 +25,7 @@ namespace PopMailDemo
         public MainPage()
         {
             this.InitializeComponent();
+            this.DataContext = new PopMailDemo.MVVM.ViewModel.FolderTree();
         }
     }
 }

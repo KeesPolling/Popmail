@@ -1,4 +1,5 @@
 ﻿using PopMailDemo;
+using System.Collections.ObjectModel;
 using PopMailDemo.MVVM.DataAcces;
 using PopMailDemo.MVVM.Model;
 using PopMailDemo.MVVM.ViewModel;
@@ -26,6 +27,7 @@ namespace TestModel
             provider.ServiceName = "110";
             provider.AccountName = "kpolling@caiway.net";
             provider.Password = "kuif0001";
+            provider.User = "kpolling@caiway.net";
             await provider.Save();
             Assert.IsNotNull(provider, "Provider niet aangemaakt");
         }
@@ -40,18 +42,17 @@ namespace TestModel
             Assert.IsNotNull(result, "Folder niet aangemaakt");
         }
         [TestMethod]
-        public async Task FolderVM()
+        public async Task FolderVM1()
         {
-            var folder = new FolderVM("Test", null);
-            await folder.Save();
-            Assert.IsNotNull(folder, "Folder niet aangemaakt");
+            var folder = new FolderVM("Test");
+            var root = await FolderVM.GetRootItems();
+            Assert.AreNotEqual(0, root.Count(), "Folder niet aangemaakt");
         }
         [TestMethod]
         public async Task FolderVMparent1()
         {
-            var parentFolder = new FolderVM("TestParent", null);
-            var testFolder = new FolderVM("Test", parentFolder);
-            await testFolder.Save();
+            var parentFolder = new FolderVM("TestParent");
+            var testFolder = await parentFolder.AddChild("Test");
             Assert.IsNotNull(testFolder, "Folder niet aangemaakt");
             Assert.IsNotNull(parentFolder, "parentFolder niet aangemaakt");
             Assert.AreEqual<int>(0, testFolder.Children.Count, "Child ten onrechte aangemaakt");
@@ -60,21 +61,18 @@ namespace TestModel
         [TestMethod]
         public async Task FolderVMRecusie1()
         {
-            var testFolder = new FolderVM("TestParent", null);
-            testFolder.Parent = testFolder;
-            await testFolder.Save();
+            var testFolder = new FolderVM("TestParent");
+            var testChild = await testFolder.AddChild(testFolder);
             Assert.IsNotNull(testFolder, "Folder niet aangemaakt");
             Assert.IsNull(testFolder.Parent, "Parent recursie!");
         }
         [TestMethod]
         public async Task FolderVMaddChild()
         {
-            var testFolder = new FolderVM("TestParent", null);
-            testFolder.AddChild("testChild");
-            await testFolder.Save();
-            var test = new FolderVM("TestParent", null);
+            var testFolder = new FolderVM("TestParent");
+            var test = await testFolder.AddChild("testChild");
             Assert.IsNotNull(test, "Folder niet aangemaakt");
-            Assert.AreEqual("testChild", test.Children[0].Name, false);
+            Assert.AreEqual("testChild", testFolder.Children[0].Name, false);
         }
     }
 }

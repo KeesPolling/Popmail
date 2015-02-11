@@ -6,127 +6,159 @@ using System.Threading.Tasks;
 using PopMailDemo.MVVM.Model;
 using PopMailDemo.MVVM.Utilities;
 using PopMailDemo.MVVM.DataAcces;
+using WinRTXamlToolkit.Tools;
 using SQLite;
+using System.Collections.ObjectModel;
 
 namespace PopMailDemo.MVVM.ViewModel
 {
-    public class FolderVM : BindableBase
+    public class FolderVM :BindableBase
     {
         private Folder folder;
         private FolderVM parent;
-        private List<FolderVM> children = new List<FolderVM>();
-
-        private bool CheckParent(List<FolderVM> Children)
-        {
-            if (Children.Contains(this))
-            {
-                return false;
-            }
-            if (this.folder.Id != 0)
-            {
-                return CheckParent(this.folder.Id);
-            }
-            return true;
-        }
-        private bool CheckParent(int Id)
-        {
-            if (this.folder != null)
-            {
-                if (this.parent != null)
-                {
-                    if (this.parent.folder.Id == Id)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return this.parent.CheckParent(Id);
-                    }
-                }
-            }
-            return true;
-        }
-        private bool CheckParent()
-        {
-            if (this.folder != null)
-            {
-                if (this.folder.Id != 0)
-                {
-                    return CheckParent(this.folder.Id);
-                }
-            }
-            return true;
-        }
-        private async Task<List<FolderVM>> ReadChildrenFromDb()
+        private ObservableCollection<FolderVM> children =  new ObservableCollection<FolderVM>();
+        public static async Task<ObservableCollection<FolderVM>> GetRootItems()
         {
             var db = Database.DbConnection;
-            var ChildList = new List<FolderVM>();
-            var Children = await db.Table<Folder>().Where(f => f.Parent == this.folder.Id).ToListAsync();
-
+            var ChildList = new ObservableCollection<FolderVM>();
+            var Children = await db.Table<Folder>().Where(f => f.Parent == 0).ToListAsync();
             foreach (Folder Childfolder in Children)
             {
-                var Child = new FolderVM(Childfolder.Id);
+                var Child = new FolderVM(Childfolder, null);
                 ChildList.Add(Child);
             }
             return ChildList;
         }
-        public FolderVM(Folder folder)
+        #region private Constructors
+        private FolderVM(Folder MyFolder, FolderVM MyParent)
         {
-
-            this.folder = folder;
-            if (this.folder.Parent != 0)
-            {
-                this.parent = new FolderVM(this.folder.Parent);
-            }
-            children = ReadChildrenFromDb().Result;
+            this.folder = MyFolder;
+            this.parent = MyParent;
+            this.children = ReadChildrenFromDb().Result;
         }
-        public FolderVM(int Id)
-        {
-            var db = Database.DbConnection;
-            var ChildList = new List<FolderVM>();
+        #endregion
 
-            this.folder = db.FindAsync<Folder>( f => f.Id == Id).Result;
-            if (this.folder == null)
+        #region CheckParent
+        private async Task<bool> CheckParent(List<int> Ids)
+        {
+            if (this.Parent == null)
             {
-                throw new ArgumentException("Folder bestaat niet");
+                var MyIds = await this.GetIdTree();
+                MyIds.Sort();
+                Ids.Sort();
+                var OldMyId = -1;
+                var OldId = -1;
+                var x = 0;
+                foreach (var MyId in MyIds)
+                {
+                    if(MyId== OldMyId)
+                    {
+                        throw new OverflowException("Folderstructure corrupt");
+                    }
+                    OldMyId = MyId;
+                    while (x + 1 <= Ids.Count())
+                    {
+                        if (Ids[x].CompareTo(OldId) == 0)
+                        {
+                            throw new OverflowException("Folderstructure corrupt");
+                        }
+                        OldId = Ids[x];
+
+                        if (Ids[x].CompareTo(MyId) < 0)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            x+=1;
+                        }
+                    }
+
+                    if (MyId == OldId)
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
-            if (this.folder.Parent != 0)
+            else
+            { 
+                return await Parent.CheckParent(Ids);
+            }
+        }
+        private async Task<List<int>> GetIdTree()
+        {
+            var MyIds = new List<int>();
+            MyIds.Add(this.Id);
+            foreach (var Child in children)
             {
-                this.parent = new FolderVM(this.folder.Parent);
+                MyIds.AddRange(await Child.GetIdTree());
             }
             
-            children = ReadChildrenFromDb().Result;
+            return MyIds;
         }
-        public FolderVM(string Name, FolderVM Parent)
+        #endregion
+
+        #region ReadChildren
+        private async Task<ObservableCollection<FolderVM>> ReadChildrenFromDb()
         {
-            this.parent = Parent;
             var db = Database.DbConnection;
-            if (Parent != null)
+            var ChildList = new ObservableCollection<FolderVM>();
+            var Children = await db.Table<Folder>().Where(f => f.Parent == this.folder.Id).ToListAsync();
+
+            foreach (Folder Childfolder in Children)
             {
-                if (Parent.folder.Id != 0) // Als dit 0 is is de parent nog niet opgeslagen
+                var Child = new FolderVM(Childfolder, this);
+                ChildList.Add(Child);
+            }
+            return ChildList;
+        }
+        #endregion
+
+        private async Task<bool> Save(List<int> Children)
+        {
+            var Saved = false;
+
+            if (this.folder != null)
+            {
+                if (CheckParent(Children).Result)
                 {
-                    this.folder = db.FindAsync<Folder>(f => (f.Parent == Parent.folder.Id) && (f.Name == Name)).Result;
+                    var db = DataAcces.Database.DbConnection;
+                    if (this.Parent != null)
+                    {
+                        Children.Add(this.Id);
+                        if (this.Parent.Save(Children).Result)
+                        {
+                            this.folder.Parent = Parent.Id;
+                        }
+                        else
+                        {
+                            this.parent = null;
+                        }
+                    }
+                    if (this.folder.Id == 0)
+                    {
+                        var i = await db.InsertAsync(folder);
+                    }
+                    else
+                    {
+                        var i = await db.UpdateAsync(folder);
+                    }
+                    Saved = true;
                 }
             }
-            else
-            {
-                this.folder = db.FindAsync<Folder>(f => (f.Parent == 0) && (f.Name == Name)).Result;
-            }
-            if (this.folder == null)
-            {
-                this.folder = new Folder();
-                this.folder.Name = Name;
-            }
-            else
-            {
-                children = ReadChildrenFromDb().Result;
-            }
-            if (Parent != null)
-            {
-                Parent.AddChild(this);
-                this.folder.Parent = Parent.folder.Id;
-            }
+            return Saved;
         }
+ 
+        #region publicConstructors
+        public FolderVM(string Name)
+        {
+            this.folder = new Folder();
+            this.Name = Name;
+            this.Save();
+        }
+        #endregion
+        #region publicProperties
         public string Name
         {
             get
@@ -152,123 +184,84 @@ namespace PopMailDemo.MVVM.ViewModel
             {
                 return this.parent;
             }
-            set 
+            private set 
             { 
-                if (this.folder != null)
+                if (this.Parent != null)
                 {
-                    if (value != null)
-                    {
-                        if (this.folder.Id != 0)
-                        {
-                            if (!CheckParent(this.folder.Id))
-                            {
-                                throw new ArgumentException("recursie in folders is not allowed");
-                            }
-                        }
-                    }
-                    parent = value;
+                    Parent.children.Remove(this);
+                    Parent.OnPropertyChanged();
                 }
+                parent = value;
+                this.OnPropertyChanged();
+                this.Save();
             }
         }
-        public List<FolderVM> Children
+        public ObservableCollection<FolderVM> Children
         {
             get
             {
                 return children;
             }
         }
-        public FolderVM AddChild(string Name)
+        #endregion
+        internal int Id
         {
-            var Child = new FolderVM(Name, this);
+            get { return folder.Id; }
+        }
+
+        #region publicMethods
+        public async Task<FolderVM> AddChild(string Name)
+        {
+            var Child = new FolderVM(Name);
+            await this.AddChild(Child);
+            this.OnPropertyChanged();
             return Child;
         }
-        public void AddChild(FolderVM Child)
+        public async Task<bool> AddChild(FolderVM Child)
         {
-            Child.Parent.RemoveChild(Child);
-            Child.Parent = this;
-            children.Add(Child);
-        }
-        public bool RemoveChild(FolderVM Child)
-        {
-            Child.Parent = null;
-            return children.Remove(Child);
-        }
-        private async Task<bool> Save(List<FolderVM> Children)
-        {
-            var Saved = false;
-
-            if (this.folder != null)
+            var Ids = await Child.GetIdTree();
+            if (this.CheckParent(Ids).Result)
             {
-                if (CheckParent(Children))
+                var hasParent = false;
+                if (Child.Parent != null)
                 {
-                    var db = DataAcces.Database.DbConnection;
-                    if (this.Parent != null)
-                    {
-                        Children.Add(this);
-                        await this.Parent.Save(Children);
-                        if (Saved)
-                        {
-                            this.folder.Parent = Parent.folder.Id;
-                        }
-                        else
-                        {
-                            this.parent = null;
-                        }
-                    }
-                    if (this.folder.Id == 0)
-                    {
-                        var i = await db.InsertAsync(folder);
-                    }
-                    else
-                    {
-                        var i = await db.UpdateAsync(folder);
-                    }
-                    Saved = true;
+                    hasParent = !(await Child.Parent.RemoveChild(Child));
+                }
+                if (!hasParent)
+                {
+                    Child.Parent = this;
+                    this.children.Add(Child);
+                    Child.Save();
+                    this.OnPropertyChanged();
+                    return true;
                 }
             }
-            return Saved;
+            return false;
         }
-        public async Task Save()
+        public async Task<bool> RemoveChild(FolderVM Child)
         {
-            if (children.Count > 0)
+            Child.Parent = null;
+            Child.Save();
+            Child.OnPropertyChanged();
+            if (this.children.Remove(Child))
             {
-                foreach (FolderVM Child in children)
-                {
-                    await Child.Save();
-                }
+                this.OnPropertyChanged();
+                return true;
             }
             else
             {
-                if (this.folder != null)
-                {
-                    if (CheckParent())
-                    {
-                        var db = DataAcces.Database.DbConnection;
-                        if (this.Parent != null)
-                        {
-                            var parentage = new List<FolderVM>();
-                            parentage.Add(this);
-                            var Saved = await this.Parent.Save(parentage);
-                            if (Saved)
-                            {
-                                this.folder.Parent = Parent.folder.Id;
-                            }
-                            else
-                            {
-                                this.parent = null;
-                            }
-                        }
-                        if (this.folder.Id == 0)
-                        {
-                            var i = await db.InsertAsync(folder);
-                        }
-                        else
-                        {
-                            var i = await db.UpdateAsync(folder);
-                        }
-                    }
-                }
+                return false;
+            }
+
+        }
+        public void Save()
+        {
+            if (this.folder != null)
+            {
+                var parentage = new List<int>();
+                var Saved = this.Save(parentage).Result;
             }
         }
+        #endregion
     }
 }

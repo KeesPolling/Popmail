@@ -13,18 +13,27 @@ namespace PopMailDemo.MVVM.ViewModel
     public class EmailProviderVM : BindableBase
     {
         private EmailProvider emailProvider;
-        private FolderVM inFolder;
-        private FolderVM outFolder;
-        private FolderVM sentFolder;
-        private FolderVM conceptsFolder;
 
+        private async Task<bool> FolderIdExists(int FolderId)
+        {
+            var db = Database.DbConnection;
+            var folder = await db.FindAsync<Folder>(f => f.Id == FolderId);
+            return (folder != null);
+        }
+        
         public EmailProviderVM()
         {
             this.emailProvider = new EmailProvider();
         }
-        public EmailProviderVM(EmailProvider emailProvider)
+        public EmailProviderVM(int Id)
         {
-            this.emailProvider = emailProvider;
+            var db = Database.DbConnection;
+            var provider = db.FindAsync<EmailProvider>(e => e.Id == Id).Result;
+            if (provider == null)
+            {
+                throw new ArgumentOutOfRangeException("Id", "Id does not exist");
+            }
+            this.emailProvider = provider;
         }
 
         public string Name
@@ -44,11 +53,11 @@ namespace PopMailDemo.MVVM.ViewModel
                     this.emailProvider.Name = value;
                     if (this.emailProvider.InFolderId == 0)
                     {
-                        FolderVM rootFolder = new FolderVM(value, null);
-                        inFolder = new FolderVM("In", rootFolder);
-                        outFolder = new FolderVM("Out", rootFolder);
-                        sentFolder = new FolderVM("Sent", rootFolder);
-                        conceptsFolder = new FolderVM("Concepts", rootFolder);
+                        FolderVM rootFolder = new FolderVM(value);
+                        this.InfolderId = (rootFolder.AddChild("In").Result).Id;
+                        this.OutfolderId = (rootFolder.AddChild("Out").Result).Id;
+                        this.SentfolderId = (rootFolder.AddChild("Sent").Result).Id;
+                        this.ConseptsfolderId = (rootFolder.AddChild("Concepts").Result).Id;
                     }
                     this.OnPropertyChanged();
                 }
@@ -58,7 +67,7 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             get
             {
-                if (this.emailProvider != null)
+                if (this.emailProvider == null)
                 {
                     return string.Empty;
                 }
@@ -77,7 +86,7 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             get
             {
-                if (this.emailProvider != null)
+                if (this.emailProvider == null)
                 {
                     return string.Empty;
                 }
@@ -96,7 +105,7 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             get
             {
-                if (this.emailProvider != null)
+                if (this.emailProvider == null)
                 {
                     return string.Empty;
                 }
@@ -115,7 +124,7 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             get
             {
-                if (this.emailProvider != null)
+                if (this.emailProvider == null)
                 {
                     return string.Empty;
                 }
@@ -130,15 +139,37 @@ namespace PopMailDemo.MVVM.ViewModel
                 }
             }
         }
-        public FolderVM InFolder
+        public string User
         {
-            get
-            {
-                if (this.emailProvider != null)
+            get 
+            { 
+                if (emailProvider == null)
                 {
                     return null;
                 }
-                return this.inFolder;
+                return this.emailProvider.User;
+            }
+            set
+            {
+                if (this.emailProvider != null)
+                {
+                    if (value == null)
+                    {
+                        throw new ArgumentNullException("User", "User is mandatory");
+                    }
+                    this.emailProvider.User = value;
+                }
+            }
+        }
+        public Nullable<int> InfolderId
+        {
+            get
+            {
+                if (this.emailProvider == null)
+                {
+                    return null;
+                }
+                return this.emailProvider.InFolderId;
             }
             set
             {
@@ -148,20 +179,27 @@ namespace PopMailDemo.MVVM.ViewModel
                     {
                         throw new ArgumentNullException("InFolder", "In folder is mandatory");
                     }
-                    this.inFolder = value;
-                    this.OnPropertyChanged();
+                    if (FolderIdExists((int)value).Result)
+                    {
+                        this.emailProvider.InFolderId = (int)value;
+                        this.OnPropertyChanged();
+                    }
+                    else
+                    {
+                        throw new ArgumentOutOfRangeException("InFolder", "In folder does not exist");
+                    }
                 }
             }
         }
-        public FolderVM OutFolder
+        public Nullable<int> OutfolderId
         {
             get
             {
-                if (this.emailProvider != null)
+                if (this.emailProvider == null)
                 {
                     return null;
                 }
-                return this.outFolder;
+                return this.emailProvider.OutFolderId;
             }
             set
             {
@@ -171,20 +209,27 @@ namespace PopMailDemo.MVVM.ViewModel
                     {
                         throw new ArgumentNullException("OutFolder", "Out folder is mandatory");
                     }
-                    this.outFolder = value;
-                    this.OnPropertyChanged();
+                    if (FolderIdExists((int)value).Result)
+                    {
+                        this.emailProvider.OutFolderId = (int)value;
+                        this.OnPropertyChanged();
+                    }
+                    else
+                    {
+                        throw new ArgumentOutOfRangeException("OutFolder", "Out folder does not exist");
+                    }
                 }
             }
         }
-        public FolderVM SentFolder
+        public Nullable<int> SentfolderId
         {
             get
             {
-                if (this.emailProvider != null)
+                if (this.emailProvider == null)
                 {
                     return null;
                 }
-                return this.sentFolder;
+                return this.emailProvider.SentFolderId;
             }
             set
             {
@@ -194,20 +239,28 @@ namespace PopMailDemo.MVVM.ViewModel
                     {
                         throw new ArgumentNullException("SentFolder", "Sent folder is mandatory");
                     }
-                    this.sentFolder = value;
-                    this.OnPropertyChanged();
+                    if (FolderIdExists((int)value).Result)
+                    {
+                        this.emailProvider.SentFolderId = (int)value;
+                        this.OnPropertyChanged();
+                    }
+                    else
+                    {
+                        throw new ArgumentOutOfRangeException("SentFolder", "Sent folder does not exist");
+                    }
                 }
             }
         }
-        public FolderVM ConceptsFolder
+
+        public Nullable<int> ConseptsfolderId
         {
             get
             {
-                if (this.emailProvider != null)
+                if (this.emailProvider == null)
                 {
                     return null;
                 }
-                return this.conceptsFolder;
+                return this.emailProvider.ConceptsFolderId;
             }
             set
             {
@@ -217,8 +270,15 @@ namespace PopMailDemo.MVVM.ViewModel
                     {
                         throw new ArgumentNullException("ConceptsFolder", "Concepts folder is mandatory");
                     }
-                    this.conceptsFolder = value;
-                    this.OnPropertyChanged();
+                    if (FolderIdExists((int)value).Result)
+                    {
+                        this.emailProvider.ConceptsFolderId = (int)value;
+                        this.OnPropertyChanged();
+                    }
+                    else
+                    {
+                        throw new ArgumentOutOfRangeException("InFolder", "In folder does not exist");
+                    }
                 }
             }
         }
@@ -228,10 +288,6 @@ namespace PopMailDemo.MVVM.ViewModel
             {
                 if (this.emailProvider.Name != null)
                 {
-                    await inFolder.Save();
-                    await outFolder.Save();
-                    await sentFolder.Save();
-                    await conceptsFolder.Save();
                     var db = Database.DbConnection;
 
                     if (this.emailProvider.Id == 0)
