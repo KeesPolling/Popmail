@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
+﻿using Windows.UI.Xaml.Controls;
+using PopMailDemo.MVVM.ViewModel;
 using Windows.UI.Xaml.Navigation;
+using PopMailDemo.View;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -25,7 +15,13 @@ namespace PopMailDemo
         public MainPage()
         {
             this.InitializeComponent();
-            this.DataContext = new PopMailDemo.MVVM.ViewModel.FolderTree();
+            Button1.Click += new Windows.UI.Xaml.RoutedEventHandler(OnButton1Click);
         }
-    }
+        protected void OnButton1Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
+        {
+            e = new Windows.UI.Xaml.RoutedEventArgs();
+
+            this.Frame.Navigate(typeof(EmailProvider));
+        }
+   }
 }

@@ -24,15 +24,15 @@ namespace PopMailDemo.MVVM.DataAcces
                 return dbPath;
             }
         }
-        private static SQLiteAsyncConnection dbConnection = CreateDatabaseAsync().Result;
+        private static SQLiteAsyncConnection dbConnection;
 
         private static async Task<SQLiteAsyncConnection> CreateDatabaseAsync()
         {
             // Create a new connection
             var db = new SQLiteAsyncConnection(DbPath); // TODO Juiste pad uitvinden
             // Create the table if it does not exist
-            var d = await db.CreateTableAsync<Folder>(); 
-            var c = await db.CreateTableAsync<EmailProvider>();
+            var d = (db.CreateTableAsync<Folder>().Result).Results; 
+            var c = (db.CreateTableAsync<EmailProvider>().Result).Results;
 
             return db;
         }
@@ -43,7 +43,14 @@ namespace PopMailDemo.MVVM.DataAcces
             { 
                 if (dbConnection == null)
                 {
-                    dbConnection = CreateDatabaseAsync().Result;
+                    try
+                    {
+                        dbConnection = CreateDatabaseAsync().Result;
+                    }
+                    catch (Exception e)
+                    {
+                        throw e;
+                    }
                 }
                 return dbConnection; 
             }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -30,7 +31,7 @@ namespace PopMailDemo.MVVM.ViewModel
             return ChildList;
         }
         #region private Constructors
-        private FolderVM(Folder MyFolder, FolderVM MyParent)
+        internal FolderVM(Folder MyFolder, FolderVM MyParent)
         {
             this.folder = MyFolder;
             this.parent = MyParent;
@@ -138,11 +139,13 @@ namespace PopMailDemo.MVVM.ViewModel
                     }
                     if (this.folder.Id == 0)
                     {
-                        var i = await db.InsertAsync(folder);
+                        var i = db.InsertAsync(folder).Result;
+                        return (i == 1);
                     }
                     else
                     {
-                        var i = await db.UpdateAsync(folder);
+                        var i = db.UpdateAsync(folder).Result;
+                        return  (i == 1) ;
                     }
                     Saved = true;
                 }
@@ -210,10 +213,10 @@ namespace PopMailDemo.MVVM.ViewModel
         }
 
         #region publicMethods
-        public async Task<FolderVM> AddChild(string Name)
+        public FolderVM AddChild(string Name)
         {
             var Child = new FolderVM(Name);
-            await this.AddChild(Child);
+            var a = this.AddChild(Child).Result;
             this.OnPropertyChanged();
             return Child;
         }

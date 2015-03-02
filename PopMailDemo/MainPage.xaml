@@ -8,6 +8,8 @@
     xmlns:xc="using:WinRTXamlToolkit.Controls"
     xmlns:data="using:WinRTXamlToolkit.Controls.Data"
     x:Class="PopMailDemo.MainPage"
+    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
+    xmlns:core="using:Microsoft.Xaml.Interactions.Core"
     mc:Ignorable="d">
     <Page.Resources>
         <ResourceDictionary>
@@ -25,62 +27,11 @@
                         Color="Aquamarine" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
-            <ResourceDictionary.MergedDictionaries>
-            <ResourceDictionary
-                    Source="ms-appx:///WinRTXamlToolkit/Controls/TreeView/TreeViewTouch.xaml" />
-                <ResourceDictionary
-                    Source="ms-appx:///WinRTXamlToolkit/Controls/TreeView/TreeViewMouse.xaml" />
-            </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Page.Resources>
-    <!--TouchTreeViewStyle-->
-
+    
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
-        <xc:TreeView
-            x:Name="tvDataBound"
-            Grid.Row="2"
-            Grid.Column="1"
-            ItemsSource="{Binding TreeItems}"
-            Style="{StaticResource TouchTreeViewStyle}"
-            Margin="0,0,120,0">
-            <xc:TreeView.ItemTemplate>
-                <DataTemplate>
-                    <data:DataTemplateExtensions.Hierarchy>
-                        <data:HierarchicalDataTemplate
-                            ItemsSource="{Binding Children}" />
-                    </data:DataTemplateExtensions.Hierarchy>
-                    <StackPanel
-                        Orientation="Horizontal">
-                        <TextBlock
-                            Text="{Binding Text}"
-                            Foreground="{StaticResource TextBrush}" />
-                        <Ellipse
-                            VerticalAlignment="Center"
-                            Margin="5"
-                            Width="10"
-                            Height="10"
-                            Fill="{Binding Brush}" />
-                    </StackPanel>
-                </DataTemplate>
-
-                <!-- Below is what the template would look like in Silverlight Toolkit -->
-                <!--<data:HierarchicalDataTemplate
-                    ItemsSource="{Binding Children}">
-                    <StackPanel
-                        Orientation="Horizontal">
-                            Text="{Binding Text}"
-                            Foreground="Aquamarine" />
-                        <Ellipse
-                            VerticalAlignment="Center"
-                            Margin="5"
-                            Width="10"
-                            Height="10"
-                            Fill="{Binding Brush}" />
-                    </StackPanel>
-                </data:HierarchicalDataTemplate>-->
-            </xc:TreeView.ItemTemplate>
-        </xc:TreeView>
-
+        <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="100" Margin="490,306,0,0" Stroke="Black" VerticalAlignment="Top" Width="100"/>
+        <HyperlinkButton Name="Button1" Content="EmailProvider"  HorizontalAlignment="Left" Margin="40,218,0,0" VerticalAlignment="Top"/>
     </Grid>
 </Page>
