@@ -17,6 +17,7 @@ namespace PopMailDemo.MVVM.ViewModel
     {
         private Folder folder;
         private FolderVM parent;
+        private string path;
         private ObservableCollection<FolderVM> children =  new ObservableCollection<FolderVM>();
         public static async Task<ObservableCollection<FolderVM>> GetRootItems()
         {
@@ -34,10 +35,11 @@ namespace PopMailDemo.MVVM.ViewModel
         internal FolderVM(Folder MyFolder, FolderVM MyParent)
         {
             this.folder = MyFolder;
-            this.parent = MyParent;
-            this.children = ReadChildrenFromDb().Result;
+            SetParent(MyParent);
+            ReadChildrenFromDb();
         }
         #endregion
+
 
         #region CheckParent
         private async Task<bool> CheckParent(List<int> Ids)
@@ -101,7 +103,7 @@ namespace PopMailDemo.MVVM.ViewModel
         #endregion
 
         #region ReadChildren
-        private async Task<ObservableCollection<FolderVM>> ReadChildrenFromDb()
+        private async Task ReadChildrenFromDb()
         {
             var db = Database.DbConnection;
             var ChildList = new ObservableCollection<FolderVM>();
@@ -112,14 +114,15 @@ namespace PopMailDemo.MVVM.ViewModel
                 var Child = new FolderVM(Childfolder, this);
                 ChildList.Add(Child);
             }
-            return ChildList;
+            children = ChildList;
+            OnPropertyChanged("Children");
         }
         #endregion
 
         private async Task<bool> Save(List<int> Children)
         {
             var Saved = false;
-
+            var i = 0; //number of records inserted or updated.
             if (this.folder != null)
             {
                 if (CheckParent(Children).Result)
@@ -128,7 +131,7 @@ namespace PopMailDemo.MVVM.ViewModel
                     if (this.Parent != null)
                     {
                         Children.Add(this.Id);
-                        if (this.Parent.Save(Children).Result)
+                        if (await this.Parent.Save(Children))
                         {
                             this.folder.Parent = Parent.Id;
                         }
@@ -139,20 +142,34 @@ namespace PopMailDemo.MVVM.ViewModel
                     }
                     if (this.folder.Id == 0)
                     {
-                        var i = db.InsertAsync(folder).Result;
-                        return (i == 1);
+                        i = await db.InsertAsync(folder);
                     }
                     else
                     {
-                        var i = db.UpdateAsync(folder).Result;
-                        return  (i == 1) ;
+                        i = await db.UpdateAsync(folder);
                     }
-                    Saved = true;
+                    return (i == 1);
                 }
             }
             return Saved;
         }
- 
+        private async Task SetParent(FolderVM Parent)
+        {
+            parent = Parent;
+            await this.GetPath().ContinueWith
+            (
+                async (p) =>
+                {
+                    path = await p;
+                    OnPropertyChanged("Path");
+                }
+            );
+        }
+        internal int Id
+        {
+            get { return folder.Id; }
+        }
+
         #region publicConstructors
         public FolderVM(string Name)
         {
@@ -194,9 +211,16 @@ namespace PopMailDemo.MVVM.ViewModel
                     Parent.children.Remove(this);
                     Parent.OnPropertyChanged();
                 }
-                parent = value;
+                SetParent(value);
                 this.OnPropertyChanged();
                 this.Save();
+            }
+        }
+        public string Path
+        {
+            get
+            {
+                return path;
             }
         }
         public ObservableCollection<FolderVM> Children
@@ -207,18 +231,26 @@ namespace PopMailDemo.MVVM.ViewModel
             }
         }
         #endregion
-        internal int Id
-        {
-            get { return folder.Id; }
-        }
 
         #region publicMethods
-        public FolderVM AddChild(string Name)
+        public async Task <FolderVM> AddChild(string Name)
         {
             var Child = new FolderVM(Name);
-            var a = this.AddChild(Child).Result;
-            this.OnPropertyChanged();
+            var a = await this.AddChild(Child);
             return Child;
+        }
+        public async Task<string> GetPath()
+        {
+            if (this.parent == null)
+            {
+                return "\\".Insert(2, Name);
+            }
+            else
+            {
+                var concatPath = await parent.GetPath();
+                concatPath = string.Concat(concatPath, "\\", Name);
+                return concatPath;
+            }
         }
         public async Task<bool> AddChild(FolderVM Child)
         {
@@ -234,7 +266,7 @@ namespace PopMailDemo.MVVM.ViewModel
                 {
                     Child.Parent = this;
                     this.children.Add(Child);
-                    Child.Save();
+                    await Child.Save();
                     this.OnPropertyChanged();
                     return true;
                 }
@@ -244,7 +276,7 @@ namespace PopMailDemo.MVVM.ViewModel
         public async Task<bool> RemoveChild(FolderVM Child)
         {
             Child.Parent = null;
-            Child.Save();
+            await Child.Save();
             Child.OnPropertyChanged();
             if (this.children.Remove(Child))
             {
@@ -257,12 +289,12 @@ namespace PopMailDemo.MVVM.ViewModel
             }
 
         }
-        public void Save()
+        public async Task Save()
         {
             if (this.folder != null)
             {
                 var parentage = new List<int>();
-                var Saved = this.Save(parentage).Result;
+                var Saved = await this.Save(parentage);
             }
         }
         #endregion

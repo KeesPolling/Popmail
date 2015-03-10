@@ -55,7 +55,7 @@ namespace PopMailDemo.Common
         /// <returns>true if this command can be executed; otherwise, false.</returns>
         public bool CanExecute(object parameter)
         {
-            return _canExecute == null ? true : _canExecute();
+                return _canExecute == null ? true : _canExecute();
         }
 
         /// <summary>
