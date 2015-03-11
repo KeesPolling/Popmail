@@ -65,7 +65,6 @@ namespace PopMailDemo.MVVM.ViewModel
                         {
                             throw new OverflowException("Folderstructure corrupt");
                         }
-                        OldId = Ids[x];
 
                         if (Ids[x].CompareTo(MyId) < 0)
                         {
@@ -73,7 +72,8 @@ namespace PopMailDemo.MVVM.ViewModel
                         }
                         else
                         {
-                            x+=1;
+                            OldId = Ids[x];
+                            x += 1;
                         }
                     }
 
@@ -156,6 +156,11 @@ namespace PopMailDemo.MVVM.ViewModel
         private async Task SetParent(FolderVM Parent)
         {
             parent = Parent;
+            if (Parent.Id == 0)
+            {
+                await Parent.Save();
+            }
+            folder.Parent = Parent.Id;
             await this.GetPath().ContinueWith
             (
                 async (p) =>
@@ -175,7 +180,6 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             this.folder = new Folder();
             this.Name = Name;
-            this.Save();
         }
         #endregion
         #region publicProperties
@@ -209,11 +213,10 @@ namespace PopMailDemo.MVVM.ViewModel
                 if (this.Parent != null)
                 {
                     Parent.children.Remove(this);
-                    Parent.OnPropertyChanged();
+                    Parent.OnPropertyChanged("Children");
                 }
                 SetParent(value);
                 this.OnPropertyChanged();
-                this.Save();
             }
         }
         public string Path
@@ -266,8 +269,7 @@ namespace PopMailDemo.MVVM.ViewModel
                 {
                     Child.Parent = this;
                     this.children.Add(Child);
-                    await Child.Save();
-                    this.OnPropertyChanged();
+                    this.OnPropertyChanged("Children");
                     return true;
                 }
             }

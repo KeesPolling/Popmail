@@ -15,6 +15,7 @@ namespace PopMailDemo.MVVM.ViewModel
     {
         private EmailProvider emailProvider;
         private RelayCommand saveCommand;
+        private Task createFolder;
         private bool hasChanges;
 
         private bool FolderIdExists(int FolderId)
@@ -26,12 +27,20 @@ namespace PopMailDemo.MVVM.ViewModel
 
         private async Task AddAllFolders(string RootName)
         {
-                FolderVM rootFolder = new FolderVM(RootName);
-                this.InfolderId = (await rootFolder.AddChild("In")).Id;
-                this.OutfolderId = (await rootFolder.AddChild("Out")).Id;
-                this.SentfolderId = (await rootFolder.AddChild("Sent")).Id;
-                this.ConseptsfolderId = (await rootFolder.AddChild("Concepts")).Id;
-
+                var rootFolder = new FolderVM(RootName);
+                await rootFolder.Save();
+                var Infolder = await rootFolder.AddChild("In");
+                await Infolder.Save();
+                this.InfolderId = Infolder.Id;
+                var OutFolder = await rootFolder.AddChild("Out");
+                await OutFolder.Save();
+                this.OutfolderId = OutFolder.Id;
+                var SentFolder = await rootFolder.AddChild("Sent");
+                await SentFolder.Save();
+                this.SentfolderId = SentFolder.Id;
+                var ConceptsFolder = await rootFolder.AddChild("Concepts");
+                await ConceptsFolder.Save();
+                this.ConseptsfolderId = ConceptsFolder.Id;
         }
         public EmailProviderVM()
         {
@@ -62,25 +71,6 @@ namespace PopMailDemo.MVVM.ViewModel
                     return this.emailProvider.Id;
                 }
             }
-            set
-            {
-                if (value != 0)
-                {
-                    var db = Database.DbConnection;
-                    var provider = db.FindAsync<EmailProvider>(e => e.Id == Id).Result;
-                    if (provider == null)
-                    {
-                        throw new ArgumentOutOfRangeException("Id", "Id does not exist");
-                    }
-                    this.emailProvider = provider;
-                }
-                else
-                {
-                    this.emailProvider = new EmailProvider();
-                }
-                hasChanges = false;
-                OnPropertyChanged("ReadyForSave");
-            }
         }
         public string Name
         {
@@ -98,7 +88,7 @@ namespace PopMailDemo.MVVM.ViewModel
                 {
                     if (this.emailProvider.InFolderId == 0)
                     {
-                        AddAllFolders(Name);
+                        createFolder = AddAllFolders(value);
                     } 
                     this.emailProvider.Name = value;
                     this.OnPropertyChanged();
@@ -347,11 +337,11 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             return
                 (
-                        (Name != null)
-                    &&  (AccountName != null)
-                    &&  (ProviderUri != null)
-                    &&  (ServiceName != null)
-                    &&  (User != null)
+                        (emailProvider.Name != null)
+                    &&  (emailProvider.AccountName != null)
+                    &&  (emailProvider.ProviderUri != null)
+                    &&  (emailProvider.ServiceName != null)
+                    &&  (emailProvider.User != null)
                     &&  (hasChanges)
                     );
         }
@@ -362,28 +352,25 @@ namespace PopMailDemo.MVVM.ViewModel
                 return this.saveCommand;
             }
         }
-        public void Save()
+        public async Task Save()
         {
             if (this.emailProvider != null)
             {
                 if (ReadyForSave())
                 {
-                    if (this.emailProvider.Name != null)
-                    {
-                        var db = Database.DbConnection;
+                    var db = Database.DbConnection;
 
-                        if (this.emailProvider.Id == 0)
-                        {
-                            // New
-                            var i = db.InsertAsync(this.emailProvider).Result;
-                        }
-                        else
-                        {
-                            // Update
-                            var i = db.UpdateAsync(this.emailProvider).Result;
-                        }
-                        HasChanges = false;
+                    if (this.emailProvider.Id == 0)
+                    {
+                        // New
+                        var i = await db.InsertAsync(this.emailProvider);
                     }
+                    else
+                    {
+                        // Update
+                        var i = await db.UpdateAsync(this.emailProvider);
+                    }
+                    HasChanges = false;
                 }
             } 
         }

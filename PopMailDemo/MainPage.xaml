@@ -1,5 +1,4 @@
-﻿
-<Page
+﻿<Page
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:PopMailDemo.MVVM.ViewModel"
@@ -27,11 +26,28 @@
                         Color="Aquamarine" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
+            <local:FolderTree x:Key="folderTree"/>
         </ResourceDictionary>
     </Page.Resources>
-    
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="100" Margin="490,306,0,0" Stroke="Black" VerticalAlignment="Top" Width="100"/>
-        <HyperlinkButton Name="Button1" Content="EmailProvider"  HorizontalAlignment="Left" Margin="40,218,0,0" VerticalAlignment="Top"/>
+    <!--DataContext="{Binding Source={StaticResource folderTree}}"-->
+    <Grid DataContext="{Binding Source={StaticResource folderTree}}">
+    	<Grid.ColumnDefinitions>
+    		<ColumnDefinition Width="195*"/>
+    		<ColumnDefinition Width="488*"/>
+    	</Grid.ColumnDefinitions>
+        <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="100" Margin="0,306,0,0" Stroke="Black" VerticalAlignment="Top" Width="100" Grid.Column="1"/>
+        <HyperlinkButton Name="Button1" Content="EmailProvider"  HorizontalAlignment="Left" Margin="175,16,0,0" VerticalAlignment="Top" Grid.Column="2"/>
+        <xc:TreeView ItemsSource="{Binding FolderItems}"  Grid.Column="0" Grid.ColumnSpan="1" HorizontalAlignment="Left" Height="768" VerticalAlignment="Bottom">
+            <xc:TreeView.ItemTemplate>
+                <DataTemplate>
+                    <data:DataTemplateExtensions.Hierarchy>
+                        <data:HierarchicalDataTemplate ItemsSource="{Binding Children}" />
+                    </data:DataTemplateExtensions.Hierarchy>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Name}"/>
+                    </StackPanel>
+                </DataTemplate>
+            </xc:TreeView.ItemTemplate>
+        </xc:TreeView>
     </Grid>
 </Page>
