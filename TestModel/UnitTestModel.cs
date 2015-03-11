@@ -52,7 +52,9 @@ namespace TestModel
         public async Task FolderVMparent1()
         {
             var parentFolder = new FolderVM("TestParent");
+            await parentFolder.Save();
             var testFolder = await parentFolder.AddChild("Test");
+            await testFolder.Save();
             Assert.IsNotNull(testFolder, "Folder niet aangemaakt");
             Assert.IsNotNull(parentFolder, "parentFolder niet aangemaakt");
             Assert.AreEqual<int>(0, testFolder.Children.Count, "Child ten onrechte aangemaakt");
@@ -62,7 +64,9 @@ namespace TestModel
         public async Task FolderVMRecusie1()
         {
             var testFolder = new FolderVM("TestParent");
+            await testFolder.Save();
             var testChild = await testFolder.AddChild(testFolder);
+            await testFolder.Save();
             Assert.IsNotNull(testFolder, "Folder niet aangemaakt");
             Assert.IsNull(testFolder.Parent, "Parent recursie!");
         }
@@ -70,7 +74,9 @@ namespace TestModel
         public async Task FolderVMaddChild()
         {
             var testFolder = new FolderVM("TestParent");
+            await testFolder.Save();
             var test = await testFolder.AddChild("testChild");
+            await test.Save();
             Assert.IsNotNull(test, "Folder niet aangemaakt");
             Assert.AreEqual("testChild", testFolder.Children[0].Name, false);
         }
