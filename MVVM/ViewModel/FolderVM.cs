@@ -127,7 +127,7 @@ namespace PopMailDemo.MVVM.ViewModel
             {
                 if (CheckParent(Children).Result)
                 {
-                    var db = DataAcces.Database.DbConnection;
+                    var db = Database.DbConnection;
                     if (this.Parent != null)
                     {
                         Children.Add(this.Id);

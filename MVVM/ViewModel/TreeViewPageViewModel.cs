@@ -8,6 +8,8 @@ using PopMailDemo.MVVM.Model;
 using WinRTXamlToolkit.Tools;
 using Windows.UI;
 using Windows.UI.Xaml.Media;
+using System.Threading.Tasks;
+using PopMailDemo.MVVM.DataAcces;
 
 namespace PopMailDemo.MVVM.ViewModel
 {
@@ -31,7 +33,7 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             var tree = new ObservableCollection<FolderVM>();
 
-            var db = PopMailDemo.MVVM.DataAcces.Database.DbConnection;
+            var db = Database.DbConnection;
             var RootFolders = db.Table<Folder>().Where(f => f.Parent == 0).ToListAsync().Result;
             //var RootFolders = db.FindAsync<Folder>(f => f.Parent == 0).Result;
             foreach (var Root in RootFolders)

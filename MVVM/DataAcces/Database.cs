@@ -1,42 +1,50 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using PopMailDemo.MVVM.Model;
+using SQLite.Net;
 using SQLite;
+using System;
+using System.IO;
 using Windows.Storage;
-using PopMailDemo.MVVM.Model;
+using SQLite.Net.Interop;
+using SQLite.Net.Platform.WinRT;
+using SQLite.Net.Async;
 
 namespace PopMailDemo.MVVM.DataAcces
 {
     public static class Database
     {
-        private static string dbPath = string.Empty;
-        private static string DbPath
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(dbPath))
-                {
-                    dbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "Storage.sqlite");
-                }
-                return dbPath;
-            }
-        }
         private static SQLiteAsyncConnection dbConnection;
 
-        private static async Task<SQLiteAsyncConnection> CreateDatabaseAsync()
+        private static SQLiteAsyncConnection CreateDatabaseAsync()
         {
             // Create a new connection
-            var db = new SQLiteAsyncConnection(DbPath); // TODO Juiste pad uitvinden
-            // Create the table if it does not exist
-            var d = (db.CreateTableAsync<Folder>().Result).Results; 
-            var c = (db.CreateTableAsync<EmailProvider>().Result).Results;
 
-            return db;
+            try
+            {
+                var Platform = new SQLitePlatformWinRT();
+                var DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path,"Storage.SQLite");
+                var ConnectionString = new SQLiteConnectionString(DbPath, true);
+                var dbLockedCon = new SQLiteConnectionWithLock(Platform ,ConnectionString);
+            
+                var db = new SQLiteAsyncConnection(() => dbLockedCon);
+
+                 //Create the table if it does not exist
+                Type[] Tables = 
+                { 
+                       typeof(Folder)
+                     , typeof(EmailProvider)
+                     , typeof(Email)
+                     , typeof(EmailFrom)
+                };
+                var d = db.CreateTablesAsync(Tables).Result;
+                return db;
+            }
+            catch(Exception e)
+            {
+                var mess = e.Message;
+                throw e;
+            }
         }
-  
+
         public static SQLiteAsyncConnection DbConnection
         {
             get 
@@ -45,7 +53,7 @@ namespace PopMailDemo.MVVM.DataAcces
                 {
                     try
                     {
-                        dbConnection = CreateDatabaseAsync().Result;
+                        dbConnection =  CreateDatabaseAsync();
                     }
                     catch (Exception e)
                     {

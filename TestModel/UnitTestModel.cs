@@ -28,7 +28,7 @@ namespace TestModel
             provider.AccountName = "kpolling@caiway.net";
             provider.Password = "kuif0001";
             provider.User = "kpolling@caiway.net";
-            provider.Save();
+            await provider.Save();
             Assert.IsNotNull(provider, "Provider niet aangemaakt");
         }
         [TestMethod]

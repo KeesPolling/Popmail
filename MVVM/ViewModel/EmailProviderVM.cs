@@ -31,16 +31,16 @@ namespace PopMailDemo.MVVM.ViewModel
                 await rootFolder.Save();
                 var Infolder = await rootFolder.AddChild("In");
                 await Infolder.Save();
-                this.InfolderId = Infolder.Id;
+                this.emailProvider.InFolderId= Infolder.Id;
                 var OutFolder = await rootFolder.AddChild("Out");
                 await OutFolder.Save();
-                this.OutfolderId = OutFolder.Id;
+                this.emailProvider.OutFolderId= OutFolder.Id;
                 var SentFolder = await rootFolder.AddChild("Sent");
                 await SentFolder.Save();
-                this.SentfolderId = SentFolder.Id;
+                this.emailProvider.SentFolderId = SentFolder.Id;
                 var ConceptsFolder = await rootFolder.AddChild("Concepts");
                 await ConceptsFolder.Save();
-                this.ConseptsfolderId = ConceptsFolder.Id;
+                this.emailProvider.ConceptsFolderId = ConceptsFolder.Id;
         }
         public EmailProviderVM()
         {
@@ -197,130 +197,6 @@ namespace PopMailDemo.MVVM.ViewModel
                     this.emailProvider.User = value;
                     this.OnPropertyChanged();
                     HasChanges = true;
-                }
-            }
-        }
-        public Nullable<int> InfolderId
-        {
-            get
-            {
-                if (this.emailProvider == null)
-                {
-                    return null;
-                }
-                return this.emailProvider.InFolderId;
-            }
-            set
-            {
-                if (this.emailProvider != null)
-                {
-                    if (value == null)
-                    {
-                        throw new ArgumentNullException("InFolder", "In folder is mandatory");
-                    }
-                    if (FolderIdExists((int)value))
-                    {
-                        this.emailProvider.InFolderId = (int)value;
-                        this.OnPropertyChanged();
-                        HasChanges = true;
-                    }
-                    else
-                    {
-                        throw new ArgumentOutOfRangeException("InFolder", "In folder does not exist");
-                    }
-                }
-            }
-        }
-        public Nullable<int> OutfolderId
-        {
-            get
-            {
-                if (this.emailProvider == null)
-                {
-                    return null;
-                }
-                return this.emailProvider.OutFolderId;
-            }
-            set
-            {
-                if (this.emailProvider != null)
-                {
-                    if (value == null)
-                    {
-                        throw new ArgumentNullException("OutFolder", "Out folder is mandatory");
-                    }
-                    if (FolderIdExists((int)value))
-                    {
-                        this.emailProvider.OutFolderId = (int)value;
-                        this.OnPropertyChanged();
-                        HasChanges = true;
-                    }
-                    else
-                    {
-                        throw new ArgumentOutOfRangeException("OutFolder", "Out folder does not exist");
-                    }
-                }
-            }
-        }
-        public Nullable<int> SentfolderId
-        {
-            get
-            {
-                if (this.emailProvider == null)
-                {
-                    return null;
-                }
-                return this.emailProvider.SentFolderId;
-            }
-            set
-            {
-                if (this.emailProvider != null)
-                {
-                    if (value == null)
-                    {
-                        throw new ArgumentNullException("SentFolder", "Sent folder is mandatory");
-                    }
-                    if (FolderIdExists((int)value))
-                    {
-                        this.emailProvider.SentFolderId = (int)value;
-                        this.OnPropertyChanged();
-                        HasChanges = true;
-                    }
-                    else
-                    {
-                        throw new ArgumentOutOfRangeException("SentFolder", "Sent folder does not exist");
-                    }
-                }
-            }
-        }
-        public Nullable<int> ConseptsfolderId
-        {
-            get
-            {
-                if (this.emailProvider == null)
-                {
-                    return null;
-                }
-                return this.emailProvider.ConceptsFolderId;
-            }
-            set
-            {
-                if (this.emailProvider != null)
-                {
-                    if (value == null)
-                    {
-                        throw new ArgumentNullException("ConceptsFolder", "Concepts folder is mandatory");
-                    }
-                    if (FolderIdExists((int)value))
-                    {
-                        this.emailProvider.ConceptsFolderId = (int)value;
-                        this.OnPropertyChanged();
-                        HasChanges = true;
-                     }
-                    else
-                    {
-                        throw new ArgumentOutOfRangeException("InFolder", "In folder does not exist");
-                    }
                 }
             }
         }

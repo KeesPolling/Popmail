@@ -1,7 +1,6 @@
-﻿using SQLite;
+﻿
+using SQLite.Net.Attributes;
 using SQLiteNetExtensions.Attributes;
-using SQLiteNetExtensions.Extensions;
-using SQLiteNetExtensions.Exceptions;
 
 namespace PopMailDemo.MVVM.Model
 {
