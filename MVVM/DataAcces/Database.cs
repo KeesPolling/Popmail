@@ -1,12 +1,10 @@
 ﻿using PopMailDemo.MVVM.Model;
 using SQLite.Net;
-using SQLite;
+using SQLite.Net.Async;
+using SQLite.Net.Platform.WinRT;
 using System;
 using System.IO;
 using Windows.Storage;
-using SQLite.Net.Interop;
-using SQLite.Net.Platform.WinRT;
-using SQLite.Net.Async;
 
 namespace PopMailDemo.MVVM.DataAcces
 {
@@ -27,13 +25,15 @@ namespace PopMailDemo.MVVM.DataAcces
             
                 var db = new SQLiteAsyncConnection(() => dbLockedCon);
 
-                 //Create the table if it does not exist
+                 //Create the tables that do not exist
                 Type[] Tables = 
                 { 
                        typeof(Folder)
                      , typeof(EmailProvider)
                      , typeof(Email)
                      , typeof(EmailFrom)
+                     , typeof(EmailSender)
+                     , typeof(EmailReplyTo)
                 };
                 var d = db.CreateTablesAsync(Tables).Result;
                 return db;
