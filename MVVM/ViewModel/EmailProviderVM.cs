@@ -11,12 +11,12 @@ using SQLite;
 
 namespace PopMailDemo.MVVM.ViewModel
 {
-    public class EmailProviderVM : BindableBase
+    public class EmailProviderVM : Microsoft.Practices.Prism.Mvvm.BindableBase 
     {
-        private EmailProvider emailProvider;
+        private EmailProvider _emailProvider;
         private RelayCommand saveCommand;
-        private Task createFolder;
-        private bool hasChanges;
+        private Task _createFolder;
+        private bool _hasChanges;
 
         private bool FolderIdExists(int FolderId)
         {
@@ -31,21 +31,21 @@ namespace PopMailDemo.MVVM.ViewModel
                 await rootFolder.Save();
                 var Infolder = await rootFolder.AddChild("In");
                 await Infolder.Save();
-                this.emailProvider.InFolderId= Infolder.Id;
+                this._emailProvider.InFolderId= Infolder.Id;
                 var OutFolder = await rootFolder.AddChild("Out");
                 await OutFolder.Save();
-                this.emailProvider.OutFolderId= OutFolder.Id;
+                this._emailProvider.OutFolderId= OutFolder.Id;
                 var SentFolder = await rootFolder.AddChild("Sent");
                 await SentFolder.Save();
-                this.emailProvider.SentFolderId = SentFolder.Id;
+                this._emailProvider.SentFolderId = SentFolder.Id;
                 var ConceptsFolder = await rootFolder.AddChild("Concepts");
                 await ConceptsFolder.Save();
-                this.emailProvider.ConceptsFolderId = ConceptsFolder.Id;
+                this._emailProvider.ConceptsFolderId = ConceptsFolder.Id;
         }
         public EmailProviderVM()
         {
-            this.emailProvider = new EmailProvider();
-            this.hasChanges = false;
+            this._emailProvider = new EmailProvider();
+            this._hasChanges = false;
             this.saveCommand = new RelayCommand( () => this.Save(),() => this.ReadyForSave());
         }
         public EmailProviderVM(int Id)
@@ -56,19 +56,19 @@ namespace PopMailDemo.MVVM.ViewModel
             {
                 throw new ArgumentOutOfRangeException("Id", "Id does not exist");
             }
-            this.emailProvider = provider;
+            this._emailProvider = provider;
         }
         public int Id
         {
             get
             {
-                if (this.emailProvider == null)
+                if (this._emailProvider == null)
                 {
                     return 0;
                 }
                 else
                 {
-                    return this.emailProvider.Id;
+                    return this._emailProvider.Id;
                 }
             }
         }
@@ -76,22 +76,21 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             get
             {
-                if (this.emailProvider == null)
+                if (this._emailProvider == null)
                 {
                     return string.Empty;
                 }
-                return this.emailProvider.Name;
+                return this._emailProvider.Name;
             }
             set
             {
-                if (this.emailProvider != null)
+                if (this._emailProvider != null)
                 {
-                    if (this.emailProvider.InFolderId == 0)
+                    if (this._emailProvider.InFolderId == 0)
                     {
-                        createFolder = AddAllFolders(value);
+                        _createFolder = AddAllFolders(value);
                     } 
-                    this.emailProvider.Name = value;
-                    this.OnPropertyChanged();
+                    this._emailProvider.Name = value;
                     HasChanges = true;
                 }
             }
@@ -100,18 +99,17 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             get
             {
-                if (this.emailProvider == null)
+                if (this._emailProvider == null)
                 {
                     return string.Empty;
                 }
-                return this.emailProvider.AccountName;
+                return this._emailProvider.AccountName;
             }
             set
             {
-                if (this.emailProvider != null)
+                if (this._emailProvider != null)
                 {
-                    this.emailProvider.AccountName = value;
-                    this.OnPropertyChanged();
+                    this._emailProvider.AccountName = value;
                     HasChanges = true;
                 }
             }
@@ -120,18 +118,17 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             get
             {
-                if (this.emailProvider == null)
+                if (this._emailProvider == null)
                 {
                     return string.Empty;
                 }
-                return this.emailProvider.ProviderUri;
+                return this._emailProvider.ProviderUri;
             }
             set
             {
-                if (this.emailProvider != null)
+                if (this._emailProvider != null)
                 {
-                    this.emailProvider.ProviderUri = value;
-                    this.OnPropertyChanged();
+                    this._emailProvider.ProviderUri = value;
                     HasChanges = true;
                 }
             }
@@ -140,18 +137,17 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             get
             {
-                if (this.emailProvider == null)
+                if (this._emailProvider == null)
                 {
                     return string.Empty;
                 }
-                return this.emailProvider.ServiceName;
+                return this._emailProvider.ServiceName;
             }
             set
             {
-                if (this.emailProvider != null)
+                if (this._emailProvider != null)
                 {
-                    this.emailProvider.ServiceName = value;
-                    this.OnPropertyChanged();
+                    this._emailProvider.ServiceName = value;
                     HasChanges = true;
                 }
             }
@@ -160,18 +156,17 @@ namespace PopMailDemo.MVVM.ViewModel
         {
            get
             {
-                if (this.emailProvider == null)
+                if (this._emailProvider == null)
                 {
                     return string.Empty;
                 }
-                return this.emailProvider.Password;
+                return this._emailProvider.Password;
             }
             set
             {
-                if (this.emailProvider != null)
+                if (this._emailProvider != null)
                 {
-                    this.emailProvider.Password = value;
-                    this.OnPropertyChanged();
+                    this._emailProvider.Password = value;
                     HasChanges = true;
                 }
             }
@@ -180,32 +175,31 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             get 
             { 
-                if (emailProvider == null)
+                if (_emailProvider == null)
                 {
                     return null;
                 }
-                return this.emailProvider.User;
+                return this._emailProvider.User;
             }
             set
             {
-                if (this.emailProvider != null)
+                if (this._emailProvider != null)
                 {
                     if (value == null)
                     {
                         throw new ArgumentNullException("User", "User is mandatory");
                     }
-                    this.emailProvider.User = value;
-                    this.OnPropertyChanged();
+                    this._emailProvider.User = value;
                     HasChanges = true;
                 }
             }
         }
         public bool HasChanges
         {
-            get{return hasChanges;}
+            get{return _hasChanges;}
             set
             {
-                hasChanges = value;
+                _hasChanges = value;
                 saveCommand.RaiseCanExecuteChanged();
             }
         }
@@ -213,12 +207,12 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             return
                 (
-                        (emailProvider.Name != null)
-                    &&  (emailProvider.AccountName != null)
-                    &&  (emailProvider.ProviderUri != null)
-                    &&  (emailProvider.ServiceName != null)
-                    &&  (emailProvider.User != null)
-                    &&  (hasChanges)
+                        (_emailProvider.Name != null)
+                    &&  (_emailProvider.AccountName != null)
+                    &&  (_emailProvider.ProviderUri != null)
+                    &&  (_emailProvider.ServiceName != null)
+                    &&  (_emailProvider.User != null)
+                    &&  (_hasChanges)
                     );
         }
         public System.Windows.Input.ICommand SaveCommand
@@ -230,21 +224,21 @@ namespace PopMailDemo.MVVM.ViewModel
         }
         public async Task Save()
         {
-            if (this.emailProvider != null)
+            if (this._emailProvider != null)
             {
                 if (ReadyForSave())
                 {
                     var db = Database.DbConnection;
 
-                    if (this.emailProvider.Id == 0)
+                    if (this._emailProvider.Id == 0)
                     {
                         // New
-                        var i = await db.InsertAsync(this.emailProvider);
+                        var i = await db.InsertAsync(this._emailProvider);
                     }
                     else
                     {
                         // Update
-                        var i = await db.UpdateAsync(this.emailProvider);
+                        var i = await db.UpdateAsync(this._emailProvider);
                     }
                     HasChanges = false;
                 }

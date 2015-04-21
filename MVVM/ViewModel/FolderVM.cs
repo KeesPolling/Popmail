@@ -1,19 +1,16 @@
 ﻿
+using Microsoft.Practices.Prism.Mvvm;
+using PopMailDemo.MVVM.DataAcces;
+using PopMailDemo.MVVM.Model;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using PopMailDemo.MVVM.Model;
-using PopMailDemo.MVVM.Utilities;
-using PopMailDemo.MVVM.DataAcces;
-using WinRTXamlToolkit.Tools;
-using SQLite;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace PopMailDemo.MVVM.ViewModel
 {
-    public class FolderVM :BindableBase
+    public class FolderVM : BindableBase
     {
         private Folder folder;
         private FolderVM parent;
@@ -155,20 +152,23 @@ namespace PopMailDemo.MVVM.ViewModel
         }
         private async Task SetParent(FolderVM Parent)
         {
-            parent = Parent;
-            if (Parent.Id == 0)
+            if (parent  != null)
             {
-                await Parent.Save();
+                await parent.RemoveChild(this);
             }
-            folder.Parent = Parent.Id;
-            await this.GetPath().ContinueWith
-            (
-                async (p) =>
+            parent = Parent;
+            if (parent != null)
+            {
+                if (Parent.Id == 0)
                 {
-                    path = await p;
-                    OnPropertyChanged("Path");
+                    await Parent.Save();
                 }
-            );
+                folder.Parent = Parent.Id;
+                await this.Save();
+                parent.OnPropertyChanged("Children");
+            }
+            path = await this.GetPath();
+            OnPropertyChanged("Path");
         }
         internal int Id
         {
@@ -198,7 +198,6 @@ namespace PopMailDemo.MVVM.ViewModel
                 if (this.folder != null)
                 {
                     this.folder.Name = value;
-                    this.OnPropertyChanged();
                 }
             }
         }
@@ -210,13 +209,7 @@ namespace PopMailDemo.MVVM.ViewModel
             }
             private set 
             { 
-                if (this.Parent != null)
-                {
-                    Parent.children.Remove(this);
-                    Parent.OnPropertyChanged("Children");
-                }
                 SetParent(value);
-                this.OnPropertyChanged();
             }
         }
         public string Path
@@ -279,10 +272,9 @@ namespace PopMailDemo.MVVM.ViewModel
         {
             Child.Parent = null;
             await Child.Save();
-            Child.OnPropertyChanged();
             if (this.children.Remove(Child))
             {
-                this.OnPropertyChanged();
+                this.OnPropertyChanged("Children");
                 return true;
             }
             else

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
+using Windows.Networking.Sockets;
 //using Windows.Networking;
 //using Windows.Networking.Sockets;
 
@@ -20,8 +21,9 @@ namespace EmailProxies
         //private string accountName;
         //private string password;
         private IpDialog _socketDialog;
-        private Pop3Service _pop3Service;
+        public Pop3Service ServiceProperties;
 
+   
         public class Pop3Exception : System.Exception
         {
             public Pop3Exception(string str) : base(str)
@@ -37,12 +39,16 @@ namespace EmailProxies
             public string Message{get; set;}
         }
 
-        public Pop3Proxy(Pop3Service Pop3Service)
+        public Pop3Proxy(string Name, string Uri, string Port, string AccountName, string Password)
         {
-            if (!CoreApplication.Properties.ContainsKey(Pop3Service.Name))
+            ServiceProperties.Address = Uri;
+            ServiceProperties.Name = Name;
+            ServiceProperties.ServiceName = Port;
+            ServiceProperties.AccountName = AccountName;
+            ServiceProperties.Password = Password;
+            if (!CoreApplication.Properties.ContainsKey(ServiceProperties.Name))
             {
-                CoreApplication.Properties.Add(Pop3Service.Name, null);
-                Po
+                CoreApplication.Properties.Add(ServiceProperties.Name, null);
             }
         }
 
@@ -52,19 +58,19 @@ namespace EmailProxies
             {
                 _socketDialog = new IpDialog();
                 //connect
-                var received = await _socketDialog.Start(_provider., serviceName);
+                var received = await _socketDialog.Start(ServiceProperties.AddressName, ServiceProperties.ServiceName);
                 if(received.StartsWith("+OK"))
                 {
-                    CoreApplication.Properties[providerName] = "connected";
+                    CoreApplication.Properties[ServiceProperties.Name] = "connected";
                 }
                 else
                 {
-                    CoreApplication.Properties[providerName] = null;
+                    CoreApplication.Properties[ServiceProperties.Name] = null;
                     return;
                 }
                 //Login: username
                 var sendstring = new StringBuilder("USER ");
-                sendstring.Append(accountName);
+                sendstring.Append(ServiceProperties.AccountName);
                 sendstring.Append("\r\n");
 
                var answer = await _socketDialog.GetResponse(sendstring.ToString());
@@ -73,17 +79,17 @@ namespace EmailProxies
                 {
                     // login password
                     sendstring = new StringBuilder("PASS ");
-                    sendstring.Append(password);
+                    sendstring.Append(ServiceProperties.Password);
                     sendstring.Append("\r\n");
                     answer = await _socketDialog.GetResponse(sendstring.ToString());
                 }
                 if (!answer.StartsWith("+OK"))
                 {
-                    CoreApplication.Properties[providerName] = null;
+                    CoreApplication.Properties[ServiceProperties.Name] = "loginFailed";
                 }
                 else
                 {
-                    CoreApplication.Properties[providerName] = "loggedin";
+                    CoreApplication.Properties[ServiceProperties.Name] = "loggedIn";
                 }
             }
             catch (Exception exception)
@@ -145,7 +151,7 @@ namespace EmailProxies
         {
             var sendstring = new StringBuilder("QUIT");
             sendstring.Append("\r\n");
-            CoreApplication.Properties[providerName] = null;
+            CoreApplication.Properties[ServiceProperties.Name] = null;
             var answer = await _socketDialog.GetResponse(sendstring.ToString());
             _socketDialog.Dispose();
         }

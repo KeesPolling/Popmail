@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Data.Xml.Dom;
@@ -145,9 +146,10 @@ namespace EmailProxies
         /// </summary>
         /// <param name="request">a valid request</param>
         /// <returns>the response from the server</returns>
-        public async Task> GetResponse(string request)
+        public async Task<MemoryStream> GetStream(string request)
         {
-            var received = new StringBuilder();
+            var received = new MemoryStream((int)_minBufferSize);
+            var memWriter = new StreamWriter(received);
             var bufferSize = _minBufferSize;
             try
             {
@@ -163,14 +165,14 @@ namespace EmailProxies
                     {
                         bufferSize = _maxBufferSize;
                     }
-                    received.Append(_dataReader.ReadString(count));
+                    memWriter.Write(_dataReader.ReadString(count));
                     count = await _dataReader.LoadAsync(bufferSize);
                 }
                 if (count > 0)
                 {
-                    received.Append(_dataReader.ReadString(count));
+                    memWriter.Write(_dataReader.ReadString(count));
                 }
-                return received.ToString();
+                return received;
             }
             catch (Exception)
             {
