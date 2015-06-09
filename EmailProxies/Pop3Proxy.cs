@@ -1,6 +1,7 @@
 ﻿//using PopMailDemo.MVVM.Model;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,9 +11,9 @@ using Windows.Networking.Sockets;
 //using Windows.Networking.Sockets;
 
 
-namespace EmailProxies
+namespace PopMailDemo.EmailProxies
 {
-    public class Pop3Proxy
+    public class Pop3Proxy: IDisposable
     {
         //private StreamSocket socket;
         //private string providerName;
@@ -20,9 +21,9 @@ namespace EmailProxies
         //private HostName hostName;
         //private string accountName;
         //private string password;
-        private IpDialog _socketDialog;
-        public Pop3Service ServiceProperties;
-
+        bool _disposed = false;
+        IpDialog _socketDialog;
+        Pop3Service _serviceProperties = new Pop3Service();
    
         public class Pop3Exception : System.Exception
         {
@@ -41,14 +42,15 @@ namespace EmailProxies
 
         public Pop3Proxy(string Name, string Uri, string Port, string AccountName, string Password)
         {
-            ServiceProperties.Address = Uri;
-            ServiceProperties.Name = Name;
-            ServiceProperties.ServiceName = Port;
-            ServiceProperties.AccountName = AccountName;
-            ServiceProperties.Password = Password;
-            if (!CoreApplication.Properties.ContainsKey(ServiceProperties.Name))
+
+            _serviceProperties.Address = Uri;
+            _serviceProperties.Name = Name;
+            _serviceProperties.ServiceName = Port;
+            _serviceProperties.AccountName = AccountName;
+            _serviceProperties.Password = Password;
+            if (!CoreApplication.Properties.ContainsKey(_serviceProperties.Name))
             {
-                CoreApplication.Properties.Add(ServiceProperties.Name, null);
+                CoreApplication.Properties.Add(_serviceProperties.Name, null);
             }
         }
 
@@ -58,38 +60,34 @@ namespace EmailProxies
             {
                 _socketDialog = new IpDialog();
                 //connect
-                var received = await _socketDialog.Start(ServiceProperties.AddressName, ServiceProperties.ServiceName);
+                var received = await _socketDialog.Start(_serviceProperties.AddressName, _serviceProperties.ServiceName);
                 if(received.StartsWith("+OK"))
                 {
-                    CoreApplication.Properties[ServiceProperties.Name] = "connected";
+                    CoreApplication.Properties[_serviceProperties.Name] = "connected";
                 }
                 else
                 {
-                    CoreApplication.Properties[ServiceProperties.Name] = null;
+                    CoreApplication.Properties[_serviceProperties.Name] = null;
                     return;
                 }
                 //Login: username
-                var sendstring = new StringBuilder("USER ");
-                sendstring.Append(ServiceProperties.AccountName);
-                sendstring.Append("\r\n");
+                var sendstring = String.Format("USER {0}\r\n", _serviceProperties.AccountName);
 
-               var answer = await _socketDialog.GetResponse(sendstring.ToString());
+               var answer = await _socketDialog.GetSingleLineResponse(sendstring);
 
                 if (answer.StartsWith("+OK"))
                 {
                     // login password
-                    sendstring = new StringBuilder("PASS ");
-                    sendstring.Append(ServiceProperties.Password);
-                    sendstring.Append("\r\n");
-                    answer = await _socketDialog.GetResponse(sendstring.ToString());
+                    sendstring = String.Format("PASS {0}\r\n", _serviceProperties.Password);
+                    answer = await _socketDialog.GetSingleLineResponse(sendstring);
                 }
                 if (!answer.StartsWith("+OK"))
                 {
-                    CoreApplication.Properties[ServiceProperties.Name] = "loginFailed";
+                    CoreApplication.Properties[_serviceProperties.Name] = "loginFailed";
                 }
                 else
                 {
-                    CoreApplication.Properties[ServiceProperties.Name] = "loggedIn";
+                    CoreApplication.Properties[_serviceProperties.Name] = "loggedIn";
                 }
             }
             catch (Exception exception)
@@ -103,46 +101,92 @@ namespace EmailProxies
                 //rootPage.NotifyUser("Connect failed with error: " + exception.Message, NotifyType.ErrorMessage);
             }
         }
-
-        public async Task<Dictionary<uint, uint>> MessageList()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public async Task<Dictionary<uint, uint>> LIST()
         {
             var mailItems = new Dictionary<uint, uint>();
-            var sendstring = new StringBuilder("LIST");
-            sendstring.Append("\r\n");
+            var sendstring = "LIST\r\n";
 
-            var answer = await _socketDialog.GetResponse(sendstring.ToString());
+            var answer = await _socketDialog.GetMultiLineResponse(sendstring);
             string[] splitstrings = { "\r\n" };
             var items = answer.Split(splitstrings, StringSplitOptions.None);
-            var separator = 0;
+            var separator = new char[] {' '};
             foreach (var item in items)
             {
                 if (!(item.StartsWith("+OK") || (item == ".") || (item == "")))
                 {
-                    separator = item.IndexOf(" ", StringComparison.Ordinal);
-                    mailItems.Add
+                    try
+                    {
+                        var Numbers = item.Split(separator, 2);
+                        mailItems.Add
                         (
-                            Convert.ToUInt32(item.Substring(0, separator), 10)
-                            , Convert.ToUInt32(item.Substring(separator + 1))
+                            Convert.ToUInt32(Numbers[0], 10)
+                            , Convert.ToUInt32(Numbers[1])
                         );
+                    }
+                    catch (System.FormatException)
+                    { }
                 }
             }
             return mailItems;
         }
-
+        //private string ReadLine(MemoryStream MemStream)
+        //{
+        //    var lineBuilder = new StringBuilder();
+        //    var bytesread = new Byte[2];
+        //    var byteread = new Byte[1];
+        //    byteread[0] = (byte)MemStream.ReadByte();
+        //    while (MemStream.Position < MemStream.Length)
+        //    {
+        //        if (byteread[0] == 13)
+        //        {
+        //            bytesread[0] = byteread[0];
+        //            bytesread[1] = (byte)MemStream.ReadByte();
+        //            if (byteread[1] == 10)
+        //            {
+        //                break;
+        //            }
+        //            else
+        //            {
+        //                lineBuilder.Append(System.Text.Encoding.UTF8.GetChars(bytesread));
+        //            }
+        //        }
+        //        else lineBuilder.Append(System.Text.Encoding.UTF8.GetChars((byte[])byteread));
+        //    }
+        //    return lineBuilder.ToString();
+        //}
         public async Task<Dictionary<uint, string>> IdentifierList()
         {
             var  mailItems= new Dictionary<uint, string>();
-            var sendstring = new StringBuilder("UIDL");
-            sendstring.Append("\r\n");
+            var sendstring = "UIDL\r\n";
 
-            var answer = await _socketDialog.GetResponse(sendstring.ToString());
-            string[] splitstrings = {"\r\n"};
+            var answer = await _socketDialog.GetMultiLineResponse(sendstring);
+            string[] splitstrings = { "\r\n" };
             var items = answer.Split(splitstrings, StringSplitOptions.None);
-            var separator = 0;
-            foreach (var item in items.Where(item => !(item.StartsWith("+OK") || (item == ".") || (item == ""))))
+            var separator = new char[] { ' ' };
+            if (items[0].StartsWith("-ERR"))
             {
-                separator = item.IndexOf(" ", StringComparison.Ordinal);
-                mailItems.Add(Convert.ToUInt32(item.Substring(0,  separator), 10), item.Substring(separator + 1));
+                throw new Exception(items[0].Substring(5));
+            }
+            foreach (var item in items)
+            {
+                if (!(item.StartsWith("+OK") || (item == ".") || (item == "")))
+                {
+                    try
+                    {
+                        var Numbers = item.Split(separator, 2);
+                        mailItems.Add
+                        (
+                            Convert.ToUInt32(Numbers[0], 10)
+                            , Numbers[1]
+                        );
+                    }
+                    catch (System.FormatException)
+                    { }
+                }
             }
             return mailItems;
         }
@@ -151,9 +195,24 @@ namespace EmailProxies
         {
             var sendstring = new StringBuilder("QUIT");
             sendstring.Append("\r\n");
-            CoreApplication.Properties[ServiceProperties.Name] = null;
-            var answer = await _socketDialog.GetResponse(sendstring.ToString());
+            CoreApplication.Properties[_serviceProperties.Name] = null;
+            var answer = await _socketDialog.GetSingleLineResponse(sendstring.ToString());
             _socketDialog.Dispose();
+        }
+        public virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            { 
+                if (_socketDialog != null) _socketDialog.Dispose();
+            }
+            _disposed = true;
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

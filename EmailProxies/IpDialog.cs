@@ -8,7 +8,7 @@ using Windows.Networking.Sockets;
 using Windows.Storage;
 using Windows.Storage.Streams;
 
-namespace EmailProxies
+namespace PopMailDemo.EmailProxies
 {
     /// <summary>
     /// This class is used for sending a request and receiving a response
@@ -17,12 +17,19 @@ namespace EmailProxies
     /// </summary>
     class IpDialog: IDisposable
     {
-        private uint _minBufferSize;
-        private uint _maxBufferSize;
-        private StreamSocket _streamSocket;
-        private DataReader _dataReader;
-        private DataWriter _dataWriter;
+        bool _disposed;
+        uint _minBufferSize;
+        uint _maxBufferSize;
+        StreamSocket _streamSocket;
+        DataReader _dataReader;
+        DataWriter _dataWriter;
 
+        private async Task SendRequest(string Request)
+        {
+            _dataWriter.WriteString(Request);
+            await _dataWriter.StoreAsync();
+            await _dataWriter.FlushAsync();
+        }
         /// <summary>
         /// The constructor sets some parameters to values that are a best
         /// match for a Pop3 service.
@@ -35,15 +42,6 @@ namespace EmailProxies
             _dataReader.InputStreamOptions = InputStreamOptions.Partial;
             _dataWriter = new DataWriter(_streamSocket.OutputStream);
             _dataWriter.UnicodeEncoding = Windows.Storage.Streams.UnicodeEncoding.Utf8;
-        }
-
-        public void Dispose()
-        {
-            _dataReader.DetachStream();
-            _dataReader.Dispose();
-            _dataWriter.DetachStream();
-            _dataWriter.Dispose();
-            _streamSocket.Dispose();
         }
         /// <summary>
         /// Connects to a Pop3 server
@@ -69,12 +67,29 @@ namespace EmailProxies
                 {
                     received = _dataReader.ReadString(count);
                 }
-                return received;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                throw;
+                switch (SocketError.GetStatus(exception.HResult))
+                {
+                    case SocketErrorStatus.AddressAlreadyInUse:
+                        // TODO  handle AddressAlreadyInUSe
+                        break;
+                    case SocketErrorStatus.AddressFamilyNotSupported:
+                    // TODO handle AddressFamilyNotSupported
+                        break;
+                    case SocketErrorStatus.ConnectionRefused:
+                        //TODO handle conenctionRefused
+                        break;
+                    case SocketErrorStatus.HostIsDown:
+                        //TODO handle HostIsDown
+                        break;
+                    default:
+                        var message = exception.Message;
+                        break;
+                }
             }
+            return received;
         }
         /// <summary>
         /// Reads designtime configurable values from an XML file.
@@ -82,57 +97,50 @@ namespace EmailProxies
         /// <returns></returns>
         public async Task LoadConfiguredValues()
         {
-            StorageFile file = await StorageFile.GetFileFromApplicationUriAsync
-            (
-                new Uri(String.Format("ms-appx:///Assets/Configuration/{0}", "All"))
-            );
-            XmlDocument xmlConfiguration = await XmlDocument.LoadFromFileAsync(file);
-            
-            // Set _minbuffersize
-            IXmlNode node = xmlConfiguration.DocumentElement.SelectSingleNode
-            (
-                "./appSettings/add[@key='minBufferSize']/@value"
-            );
-            _minBufferSize = (node == null) ? (uint)1023 : (uint)node.NodeValue;
-
-            // Set _maxbuffersize
-            node = xmlConfiguration.DocumentElement.SelectSingleNode
+            try
+            {
+                var FileName = new Uri(String.Format("ms-appx:///Assets/Configuration/{0}", "All.xml"));
+                StorageFile file = await StorageFile.GetFileFromApplicationUriAsync
                 (
-                    "./appSettings/add[@key='maxBufferSize']/@value"
+                    FileName    
                 );
-            _maxBufferSize = (node == null) ? (uint)64001: (uint)node.NodeValue;
-     
+                XmlDocument xmlConfiguration = await XmlDocument.LoadFromFileAsync(file);
+
+                // Set _minbuffersize
+                IXmlNode node = xmlConfiguration.DocumentElement.SelectSingleNode
+                (
+                    "./appSettings/add[@key='minBufferSize']/@value"
+                );
+                _minBufferSize = (node == null) ? (uint)1023 : (uint)node.NodeValue;
+
+                // Set _maxbuffersize
+                node = xmlConfiguration.DocumentElement.SelectSingleNode
+                    (
+                        "./appSettings/add[@key='maxBufferSize']/@value"
+                    );
+                _maxBufferSize = (node == null) ? (uint)64001 : (uint)node.NodeValue;
+            }
+            catch (System.IO.FileNotFoundException fnfe) 
+            {
+                _minBufferSize = 1024;
+                _maxBufferSize = 64000;
+            }
+
         }
         /// <summary>
         /// Sends a request to the service
         /// </summary>
-        /// <param name="request">a valid request</param>
+        /// <param name="Request">a valid request</param>
         /// <returns>the response from the server</returns>
-        public async Task<string> GetResponse(string request)
+        public async Task<string> GetSingleLineResponse(string Request)
         {
             var received = new StringBuilder();
             var bufferSize = _minBufferSize;
             try
             {
-                _dataWriter.WriteString(request);
-                await _dataWriter.StoreAsync();
-                await _dataWriter.FlushAsync();
-
+                await SendRequest(Request);
                 var count = await _dataReader.LoadAsync(bufferSize);
-                while (count == bufferSize)
-                {
-                    bufferSize = bufferSize * 4;
-                    if (bufferSize > _maxBufferSize)
-                    {
-                        bufferSize = _maxBufferSize;
-                    }
-                    received.Append(_dataReader.ReadString(count));
-                    count = await _dataReader.LoadAsync(bufferSize);
-                }
-                if (count > 0)
-                {
-                    received.Append(_dataReader.ReadString(count));
-                }
+                received.Append(_dataReader.ReadString(count));
                 return received.ToString();
             }
             catch (Exception)
@@ -144,40 +152,95 @@ namespace EmailProxies
         /// <summary>
         /// Sends a request to the service
         /// </summary>
-        /// <param name="request">a valid request</param>
+        /// <param name="Request">a valid request</param>
         /// <returns>the response from the server</returns>
-        public async Task<MemoryStream> GetStream(string request)
+        public async Task<string> GetMultiLineResponse(string Request)
         {
-            var received = new MemoryStream((int)_minBufferSize);
-            var memWriter = new StreamWriter(received);
+            var received = new StringBuilder();
             var bufferSize = _minBufferSize;
             try
             {
-                _dataWriter.WriteString(request);
-                await _dataWriter.StoreAsync();
-                await _dataWriter.FlushAsync();
-
+                await SendRequest(Request);
                 var count = await _dataReader.LoadAsync(bufferSize);
-                while (count == bufferSize)
+                received.Append(_dataReader.ReadString(count));
+                while (!received.ToString().EndsWith("\r\n.\r\n", StringComparison.Ordinal))
                 {
                     bufferSize = bufferSize * 4;
                     if (bufferSize > _maxBufferSize)
                     {
                         bufferSize = _maxBufferSize;
                     }
-                    memWriter.Write(_dataReader.ReadString(count));
+                    count = await _dataReader.LoadAsync(bufferSize);
+                    received.Append(_dataReader.ReadString(count));
+                }
+                return received.ToString();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }        /// <summary>
+        /// Sends a request to the service
+        /// </summary>
+        /// <param name="Request">a valid request</param>
+        /// <returns>the response from the server</returns>
+        public async Task<MemoryStream> GetStream(string Request)
+        {
+            var received = new MemoryStream((int)_minBufferSize); 
+            var memWriter = new StreamWriter(received);
+            var bufferSize = _minBufferSize;
+            try
+            {
+                await SendRequest(Request);
+                var count = await _dataReader.LoadAsync(bufferSize);
+                memWriter.Write(_dataReader.ReadString(count));
+                while (_dataReader.UnconsumedBufferLength > 0)
+                {
+                    bufferSize = bufferSize * 4;
+                    if (bufferSize > _maxBufferSize)
+                    {
+                        bufferSize = _maxBufferSize;
+                    }
+                    
                     count = await _dataReader.LoadAsync(bufferSize);
                 }
                 if (count > 0)
                 {
                     memWriter.Write(_dataReader.ReadString(count));
                 }
+                memWriter.Flush();
                 return received;
             }
             catch (Exception)
             {
 
                 throw;
+            }
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        public virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+            if (disposing)
+            {
+                if (_dataReader != null)
+                {
+                     _dataReader.Dispose();
+                }
+                if (_dataWriter != null)
+                {
+                    _dataWriter.Dispose();
+                }
+                if (_streamSocket != null)
+                {
+                    _streamSocket.Dispose();
+                }
+                _disposed = true;
             }
         }
     }

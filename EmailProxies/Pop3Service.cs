@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 using Windows.Networking.Sockets;
 using Windows.Networking;
 
-namespace EmailProxies
+namespace PopMailDemo.EmailProxies
 {
     public class Pop3Service
     {   
-        private StreamSocket _socket;
         internal HostName AddressName{ get; set;}
         public string Name{ get; set; }
         public string AccountName { get; set; }
@@ -23,7 +22,7 @@ namespace EmailProxies
             }
             set
             {
-                AddressName = new HostName(Address);
+                AddressName = new HostName(value);
             }
         }
         public string ServiceName { get; set; }
