@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest">
-  <Identity Name="0f8a6503-22b4-474b-8f3f-2bd5374ee84e" Publisher="CN=keesPolling" Version="1.0.0.0" />
+  <Identity Name="PopMail-EmailProxiesTest" Publisher="CN=keesPolling" Version="0.12.0.0" />
   <Properties>
     <DisplayName>EmailProxies</DisplayName>
-    <PublisherDisplayName>keesPolling</PublisherDisplayName>
+    <PublisherDisplayName>Kees Polling</PublisherDisplayName>
     <Logo>Images\UnitTestStoreLogo.png</Logo>
     <Description>EmailProxies</Description>
   </Properties>

@@ -9,7 +9,7 @@
     <ProjectGuid>{6BF862C3-C012-40CC-B9CF-BF2CAA4EEFC2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EmailProxies</RootNamespace>
+    <RootNamespace>PopMailDemo.EmailProxies</RootNamespace>
     <AssemblyName>EmailProxies</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformVersion>8.1</TargetPlatformVersion>
@@ -108,6 +108,15 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataStreamInterpreter.cs" />
+    <Compile Include="EmailInterpreter\AddressList.cs" />
+    <Compile Include="EmailInterpreter\Email.cs" />
+    <Compile Include="EmailInterpreter\EmailInterpreter.cs" />
+    <Compile Include="EmailInterpreter\EOL.cs" />
+    <Compile Include="EmailInterpreter\FieldValue.cs" />
+    <Compile Include="EmailInterpreter\HeaderFieldName.cs" />
+    <Compile Include="EmailInterpreter\Header.cs" />
+    <Compile Include="IByteStreamReader.cs" />
     <Compile Include="Pop3Proxy.cs" />
     <Compile Include="Pop3Service.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

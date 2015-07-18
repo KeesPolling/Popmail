@@ -1,18 +1,20 @@
-﻿using PopMailDemo.EmailProxies;
+﻿using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using PopMailDemo.EmailProxies;
 using System;
-using System.IO;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using Windows.Networking;
-using Windows.Storage.Streams;
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 
-
-namespace PopMailDemo.EmailProxies.Tests
+namespace PopMailDemo.Tests.EmailProxies
 {
     [TestClass]
-    public class UnitTest1
+    public class Pop3
     {
+        [ClassInitialize]
+        public static void PrepareData(TestContext T)
+        {
+            var testunzip = new PrepareMockData();
+            var UnzipTask = testunzip.UnZip("EmailProxiesMock.zip");
+            UnzipTask.Wait();
+        }
         private Pop3Proxy GetTestProxy() 
         {
             var Name = "Caiway";
@@ -23,7 +25,15 @@ namespace PopMailDemo.EmailProxies.Tests
             
             return new Pop3Proxy(Name, ProviderUri, ServiceName, AccountName, Password);
         }
-
+        [TestMethod]
+        public async Task ReadFile()
+        {
+            var FileName = "TestCFWSP.txt";
+            var reader = new FileByteReader();
+            await reader.GetStream(FileName);
+            var nextByte = await reader.ReadByte();
+            reader.Dispose(false);
+        }
         private async Task<Pop3Proxy> Connect(Pop3Proxy Proxy)
         {
             await Proxy.Connect();
@@ -71,10 +81,31 @@ namespace PopMailDemo.EmailProxies.Tests
                 {
                     await this.Connect(test);
 
-                    var messages = await test.IdentifierList();
+                    var messages = await test.UILD();
                     await test.Disconnect();
 
                     Assert.AreEqual(true, (messages.Count > 309), String.Format("Aantal berichten {0}", messages.Count));
+                }
+                catch (Exception ex)
+                {
+                    Assert.Fail(ex.Message);
+                }
+            }
+        }
+
+        [TestMethod]
+        public async Task TestMethodGetStat()
+        {
+            using (var test = GetTestProxy())
+            {
+                try
+                {
+                    await this.Connect(test);
+
+                    var statistics = await test.STAT();
+                    await test.Disconnect();
+
+                    Assert.AreEqual(true, (statistics.NumberOfMessages > 309), String.Format("Aantal berichten {0}", statistics.NumberOfMessages));
                 }
                 catch (Exception ex)
                 {

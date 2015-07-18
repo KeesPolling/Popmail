@@ -1,4 +1,5 @@
 ﻿//using PopMailDemo.MVVM.Model;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Networking.Sockets;
+using PopMailDemo.EmailProxies.EmailInterpreter;
 //using Windows.Networking;
 //using Windows.Networking.Sockets;
 
@@ -38,6 +40,14 @@ namespace PopMailDemo.EmailProxies
             public long Bytes{get; set;}
             public bool Retrieved{get; set;}
             public string Message{get; set;}
+        }
+        /// <summary>
+        /// Data returned by the STAT function
+        /// </summary>
+        public class MaildropStatistics
+        {
+            public int NumberOfMessages {get; set;}
+            public int NumberofBytes{get; set;}
         }
 
         public Pop3Proxy(string Name, string Uri, string Port, string AccountName, string Password)
@@ -104,7 +114,22 @@ namespace PopMailDemo.EmailProxies
         /// <summary>
         /// 
         /// </summary>
-        /// <returns></returns>
+        /// <returns>NumberOfBytes and NumberOfMessages as MaildropStatistics</returns>
+        public async Task<MaildropStatistics> STAT()
+        {
+            var statistics = new MaildropStatistics();
+            var sendstring = "STAT\r\n";
+            var answer = await _socketDialog.GetSingleLineResponse(sendstring);
+            if (answer.StartsWith("+OK "))
+            {
+                char[] delimiters = {  ' '  };
+                var numbers = answer.Split(delimiters, 4);
+                statistics.NumberOfMessages = Convert.ToInt32(numbers[1]);
+                statistics.NumberofBytes = Convert.ToInt32(numbers[2]);
+            }
+            return statistics;
+        }
+
         public async Task<Dictionary<uint, uint>> LIST()
         {
             var mailItems = new Dictionary<uint, uint>();
@@ -133,6 +158,15 @@ namespace PopMailDemo.EmailProxies
             }
             return mailItems;
         }
+        public async Task<Email> RETR(int MessageNumber)
+        {
+            var mail = new Email();
+            var sendString = string.Format("RETR {0}\r\n", MessageNumber);
+            var AtEnd = false;
+            var inStream = await _socketDialog.GetStream(sendString);
+
+            return mail;
+        }
         //private string ReadLine(MemoryStream MemStream)
         //{
         //    var lineBuilder = new StringBuilder();
@@ -158,7 +192,7 @@ namespace PopMailDemo.EmailProxies
         //    }
         //    return lineBuilder.ToString();
         //}
-        public async Task<Dictionary<uint, string>> IdentifierList()
+        public async Task<Dictionary<uint, string>> UILD()
         {
             var  mailItems= new Dictionary<uint, string>();
             var sendstring = "UIDL\r\n";

@@ -193,7 +193,7 @@ namespace PopMailDemo.MVVM.ViewModel
                 }
                 return this.folder.Name;
             }
-            set
+             set
             {
                 if (this.folder != null)
                 {

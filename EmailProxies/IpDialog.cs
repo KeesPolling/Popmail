@@ -15,15 +15,23 @@ namespace PopMailDemo.EmailProxies
     /// over the internet.
     /// minBufferSize and maxBufferSize are read from a XML configration file
     /// </summary>
-    class IpDialog: IDisposable
+    public class IpDialog: IByteStreamReader, IDisposable 
     {
         bool _disposed;
         uint _minBufferSize;
         uint _maxBufferSize;
+        uint _buffersize;
         StreamSocket _streamSocket;
         DataReader _dataReader;
         DataWriter _dataWriter;
-
+        StreamWriter _memWriter;
+        internal DataReader Reader
+        {
+            get
+            {
+                return _dataReader;
+            }
+        }
         private async Task SendRequest(string Request)
         {
             _dataWriter.WriteString(Request);
@@ -185,32 +193,14 @@ namespace PopMailDemo.EmailProxies
         /// </summary>
         /// <param name="Request">a valid request</param>
         /// <returns>the response from the server</returns>
-        public async Task<MemoryStream> GetStream(string Request)
+        public async Task<DataReader> GetStream(string Request)
         {
-            var received = new MemoryStream((int)_minBufferSize); 
-            var memWriter = new StreamWriter(received);
-            var bufferSize = _minBufferSize;
+            var _bufferSize = _minBufferSize;
             try
             {
                 await SendRequest(Request);
-                var count = await _dataReader.LoadAsync(bufferSize);
-                memWriter.Write(_dataReader.ReadString(count));
-                while (_dataReader.UnconsumedBufferLength > 0)
-                {
-                    bufferSize = bufferSize * 4;
-                    if (bufferSize > _maxBufferSize)
-                    {
-                        bufferSize = _maxBufferSize;
-                    }
-                    
-                    count = await _dataReader.LoadAsync(bufferSize);
-                }
-                if (count > 0)
-                {
-                    memWriter.Write(_dataReader.ReadString(count));
-                }
-                memWriter.Flush();
-                return received;
+                var count = await _dataReader.LoadAsync(_bufferSize);
+                return _dataReader;
             }
             catch (Exception)
             {
@@ -218,6 +208,23 @@ namespace PopMailDemo.EmailProxies
                 throw;
             }
         }
+        public async Task<byte> ReadByte()
+        {
+            if (_dataReader.UnconsumedBufferLength == 0)
+            {
+                var bufferSize = _minBufferSize;
+                try
+                {
+                    var count = await _dataReader.LoadAsync(bufferSize);
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            }
+            return _dataReader.ReadByte();
+        }
+
         public void Dispose()
         {
             Dispose(true);
