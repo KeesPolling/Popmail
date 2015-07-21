@@ -27,6 +27,12 @@ namespace PopMailDemo.Tests.EmailProxies
             
             return new Pop3Proxy(Name, ProviderUri, ServiceName, AccountName, Password);
         }
+        private async Task<Pop3Proxy> Connect(Pop3Proxy Proxy)
+        {
+            await Proxy.Connect();
+            return Proxy;
+        }
+
         [TestMethod]
         public async Task ReadHeaderCommentsFWS()
         {
@@ -36,13 +42,23 @@ namespace PopMailDemo.Tests.EmailProxies
             var header = new Header();
             await header.ReadHeader(reader);
             reader.Dispose(false);
+            Assert.AreEqual(header.From.Adresses[0].Name, "Pete", "This message is not from Pete");
+            Assert.AreEqual(header.To.Groups[0].Name, "A Group", "This message is not to 'A Group'");
+            Assert.AreEqual(header.To.Groups[0].Members[0].Name, "Chris Jones", "A Group does not include 'Chris Jones'");
         }
-        private async Task<Pop3Proxy> Connect(Pop3Proxy Proxy)
+        [TestMethod]
+        public async Task ReadMessageIDs()
         {
-            await Proxy.Connect();
-            return Proxy;
-        }    
-
+            var FileName = "testReferences.txt";
+            var reader = new FileByteReader();
+            await reader.GetStream(FileName);
+            var header = new Header();
+            await header.ReadHeader(reader);
+            reader.Dispose(false);
+            Assert.AreEqual(header.MessageId, "abcd.1234@local.machine.test", "This message has thet wrong ID");
+            Assert.AreEqual(header.InReplyTo.Identifiers[0], "3456@example.net", "This message replies to the wrong message");
+            Assert.AreEqual(header.References.Identifiers.Count, 2, "This message does not reference 2 messages");
+        }
         [TestMethod]
         public async Task TestMethodConnect()
         {

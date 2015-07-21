@@ -8,11 +8,6 @@ namespace PopMailDemo.EmailProxies.EmailInterpreter
 {
     public class AddressList : FieldValue
     {
-        public AddressList()
-        {
-            this.Groups = new List<Group>();
-            this.Adresses = new List<Adress>();
-        }
         public class Adress
         {
             public string Name { get; set; }
@@ -29,6 +24,12 @@ namespace PopMailDemo.EmailProxies.EmailInterpreter
         }
         public List<Group> Groups { get; set; }
         public List<Adress> Adresses { get; set; }
+
+        public AddressList()
+        {
+            this.Groups = new List<Group>();
+            this.Adresses = new List<Adress>();
+        }
 
         private void AddressAdd(List<AddressList.Adress> List, AddressList.Adress Address, StringBuilder Value)
         {

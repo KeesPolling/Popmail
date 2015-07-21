@@ -116,6 +116,7 @@
     <Compile Include="EmailInterpreter\HeaderFieldName.cs" />
     <Compile Include="EmailInterpreter\Header.cs" />
     <Compile Include="EmailInterpreter\HeaderIgnore.cs" />
+    <Compile Include="EmailInterpreter\IdentificationField.cs" />
     <Compile Include="IByteStreamReader.cs" />
     <Compile Include="Pop3Proxy.cs" />
     <Compile Include="Pop3Service.cs" />

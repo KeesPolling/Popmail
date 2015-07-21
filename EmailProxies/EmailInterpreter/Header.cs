@@ -17,8 +17,8 @@ namespace PopMailDemo.EmailProxies.EmailInterpreter
         public AddressList Bcc { get; set; }
         public DateTime OrigDate { get; set; }
         public string MessageId { get; set; }
-        public List<string> InReplyTo { get; set; }
-        public List<string> References { get; set; }
+        public IdentificationField InReplyTo { get; set; }
+        public IdentificationField References { get; set; }
         public string Subject { get; set; }
         public string Comments { get; set; }
         public List<string> Keywords { get; set; }
@@ -33,9 +33,8 @@ namespace PopMailDemo.EmailProxies.EmailInterpreter
                 switch (await fieldName.ReadFieldName(buffer, Reader))
                 {
                     case "From":
-                        var from = new AddressList();
-                        buffer = await from.ReadAddressList(Reader);
-                        this.From = from;
+                        this.From = new AddressList();
+                        buffer = await From.ReadAddressList(Reader);
                         break;
                     case "Sender":
                         var sender = new AddressList();
@@ -43,28 +42,33 @@ namespace PopMailDemo.EmailProxies.EmailInterpreter
                         this.Sender = sender.Adresses[0];
                         break;
                     case "Reply-To":
-                        var replyTo = new AddressList();
-                        buffer = await replyTo.ReadAddressList(Reader);
-                        this.ReplyTo = replyTo;
+                        this.ReplyTo = new AddressList();
+                        buffer = await ReplyTo.ReadAddressList(Reader);
                         break;
                     case "To":
-                        var to = new AddressList();
-                        buffer = await to.ReadAddressList(Reader);
-                        this.To = to;
+                        this.To = new AddressList();
+                        buffer = await To.ReadAddressList(Reader);
                         break;
                     case "Cc":
-                        var cc = new AddressList();
-                        buffer = await cc.ReadAddressList(Reader);
-                        this.Cc = cc;
+                        this.Cc = new AddressList();
+                        buffer = await Cc.ReadAddressList(Reader);
                         break;
                     case "Date":
                         buffer = await HeaderIgnore.ReadIgnore(Reader);
                     //    ProcessDateTime(Dr);
-                    //    break;
-                    //case HeaderFieldType.MessageId:
-                    //    ProcessMessageId(Dr);
-                    //    break;
-                    //case HeaderFieldType.Other:
+                        break;
+                    case "Message-ID":
+                        var ids = new IdentificationField();
+                        buffer = await ids.ReadIdentifiers(Reader);
+                        this.MessageId = ids.Identifiers[0];
+                        break;
+                    case "In-Reply-To":
+                        InReplyTo = new IdentificationField();
+                        buffer = await InReplyTo.ReadIdentifiers(Reader);
+                        break;
+                    case "References":
+                        this.References = new IdentificationField();
+                        buffer = await References.ReadIdentifiers(Reader);
                         break;
                     default:
                         buffer = await HeaderIgnore.ReadIgnore(Reader);

@@ -145,7 +145,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MVVM\MVVM.csproj">
+    <ProjectReference Include="..\..\MVVM\MVVM.csproj">
       <Project>{afb390a2-f00e-47af-8210-9432e19a891e}</Project>
       <Name>MVVM</Name>
     </ProjectReference>
