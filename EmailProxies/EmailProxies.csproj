@@ -111,11 +111,11 @@
     <Compile Include="DataStreamInterpreter.cs" />
     <Compile Include="EmailInterpreter\AddressList.cs" />
     <Compile Include="EmailInterpreter\Email.cs" />
-    <Compile Include="EmailInterpreter\EmailInterpreter.cs" />
     <Compile Include="EmailInterpreter\EOL.cs" />
     <Compile Include="EmailInterpreter\FieldValue.cs" />
     <Compile Include="EmailInterpreter\HeaderFieldName.cs" />
     <Compile Include="EmailInterpreter\Header.cs" />
+    <Compile Include="EmailInterpreter\HeaderIgnore.cs" />
     <Compile Include="IByteStreamReader.cs" />
     <Compile Include="Pop3Proxy.cs" />
     <Compile Include="Pop3Service.cs" />

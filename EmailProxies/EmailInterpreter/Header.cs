@@ -7,52 +7,67 @@ using Windows.Storage.Streams;
 
 namespace PopMailDemo.EmailProxies.EmailInterpreter
 {
-    class Header
+    public class Header
     {
-        byte[] headerEnd = new byte[]{(byte)SpecialByte.CarriageReturn, (byte)SpecialByte.Linefeed};
-        internal protected async Task ReadHeader(Email Mail, List<byte[]> EndStrings, IpDialog Ip)
+        public AddressList From{ get; set; }
+        public AddressList.Adress Sender { get; set; }
+        public AddressList ReplyTo { get; set; }
+        public AddressList To { get; set; }
+        public AddressList Cc { get; set; }
+        public AddressList Bcc { get; set; }
+        public DateTime OrigDate { get; set; }
+        public string MessageId { get; set; }
+        public List<string> InReplyTo { get; set; }
+        public List<string> References { get; set; }
+        public string Subject { get; set; }
+        public string Comments { get; set; }
+        public List<string> Keywords { get; set; }
+        private byte[] headerEnd = new byte[]{(byte)FieldValue.SpecialByte.CarriageReturn, (byte)FieldValue.SpecialByte.Linefeed};
+        public async Task ReadHeader( IByteStreamReader Reader)
         {
-            var NameInt = new HeaderFieldName();
-            var buffer = await Ip.ReadByte(); // vooruitlees omdat processFieldName 
+            var fieldName = new HeaderFieldName();
+            var buffer = await Reader.ReadByte(); // vooruitlees omdat processFieldName 
                                                 //een byte nodig heeft.
             while (buffer != headerEnd[0])
             {
-                var fieldName = await NameInt.ProcessFieldName(buffer, Ip);
-                switch (fieldName)
+                switch (await fieldName.ReadFieldName(buffer, Reader))
                 {
                     case "From":
                         var from = new AddressList();
-                        buffer = await from.ProcessStream(Ip);
-                        Mail.From = from;
+                        buffer = await from.ReadAddressList(Reader);
+                        this.From = from;
                         break;
                     case "Sender":
                         var sender = new AddressList();
-                        buffer = await sender.ProcessStream(Ip);
-                        Mail.Sender = sender.Adresses[0];
+                        buffer = await sender.ReadAddressList(Reader);
+                        this.Sender = sender.Adresses[0];
                         break;
-                    //case "Reply-To":
-                    //    ProcessAddressList(Dr);
-                    //    break;
-                    //case "To":
-                    //    ProcessAddressList(Dr);
-                    //    break;
-                    //case "Cc":
-                    //    ProcessAddressList(Dr);
-                    //    break;
-
-                    //case HeaderFieldType.Ignore:
-                    //    ProcessIgnore(Dr);
-                    //    break;
-                    //case HeaderFieldType.DateTime:
+                    case "Reply-To":
+                        var replyTo = new AddressList();
+                        buffer = await replyTo.ReadAddressList(Reader);
+                        this.ReplyTo = replyTo;
+                        break;
+                    case "To":
+                        var to = new AddressList();
+                        buffer = await to.ReadAddressList(Reader);
+                        this.To = to;
+                        break;
+                    case "Cc":
+                        var cc = new AddressList();
+                        buffer = await cc.ReadAddressList(Reader);
+                        this.Cc = cc;
+                        break;
+                    case "Date":
+                        buffer = await HeaderIgnore.ReadIgnore(Reader);
                     //    ProcessDateTime(Dr);
                     //    break;
                     //case HeaderFieldType.MessageId:
                     //    ProcessMessageId(Dr);
                     //    break;
                     //case HeaderFieldType.Other:
-
+                        break;
                     default:
-
+                        buffer = await HeaderIgnore.ReadIgnore(Reader);
                         break;
                 }
             }

@@ -115,7 +115,6 @@
   <ItemGroup>
     <Compile Include="FileByteReader.cs" />
     <Compile Include="Pop3.cs" />
-    <Compile Include="PrepareMockData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

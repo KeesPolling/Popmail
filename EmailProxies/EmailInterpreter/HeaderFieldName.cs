@@ -8,11 +8,11 @@ namespace PopMailDemo.EmailProxies.EmailInterpreter
 {
     internal class HeaderFieldName
     {
-        internal async Task<string> ProcessFieldName(byte Buffer, IpDialog Ip)
+        internal async Task<string> ReadFieldName(byte Buffer, IByteStreamReader Ip)
         {
             var nameBuilder = new StringBuilder();
             var buffer = Buffer;
-            while (buffer != 50)
+            while (buffer != (byte)FieldValue.SpecialByte.Colon)
             {
                 nameBuilder.Append(Convert.ToChar(buffer));
                 buffer = await Ip.ReadByte();

@@ -4,27 +4,28 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace PopMailDemo.EmailProxies.EmailInterpreter
 {
     class EOL
     {
         internal bool End { get; set; }
-        internal async Task<byte> ProcessEOL(IpDialog Ip)
+        internal async Task<byte> ProcessEOL(IByteStreamReader Reader)
         {
-            var rs = await Ip.ReadByte();
-            if (rs != (byte)SpecialByte.Linefeed)
+            var rs = await Reader.ReadByte();
+            if (rs != (byte)FieldValue.SpecialByte.Linefeed)
             {
                 throw new FormatException("carriagereturn must be followed by linefeed");
             }
-            rs = await Ip.ReadByte();
-            if (rs == (byte)SpecialByte.Space)
+            rs = await Reader.ReadByte();
+            if (rs == (byte)FieldValue.SpecialByte.Space)
             {
-                rs = await Ip.ReadByte();
-                while (rs == (byte)SpecialByte.Space)
+                rs = await Reader.ReadByte();
+                while (rs == (byte)FieldValue.SpecialByte.Space)
                 {
-                    rs = await Ip.ReadByte();
+                    rs = await Reader.ReadByte();
                 }
-                if (rs == (byte)SpecialByte.CarriageReturn)
+                if (rs == (byte)FieldValue.SpecialByte.CarriageReturn)
                 {
                     this.End = true;
                 }

@@ -1,7 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Windows.ApplicationModel;
 using PopMailDemo.EmailProxies;
 using System;
 using System.Threading.Tasks;
+using Windows.Storage;
+using PopMailDemo.EmailProxies.EmailInterpreter;
 
 namespace PopMailDemo.Tests.EmailProxies
 {
@@ -11,8 +14,7 @@ namespace PopMailDemo.Tests.EmailProxies
         [ClassInitialize]
         public static void PrepareData(TestContext T)
         {
-            var testunzip = new PrepareMockData();
-            var UnzipTask = testunzip.UnZip("EmailProxiesMock.zip");
+            var UnzipTask = FileUtils.UnZip(Package.Current.InstalledLocation ,"EmailProxiesMock.zip", ApplicationData.Current.LocalFolder);
             UnzipTask.Wait();
         }
         private Pop3Proxy GetTestProxy() 
@@ -26,12 +28,13 @@ namespace PopMailDemo.Tests.EmailProxies
             return new Pop3Proxy(Name, ProviderUri, ServiceName, AccountName, Password);
         }
         [TestMethod]
-        public async Task ReadFile()
+        public async Task ReadHeaderCommentsFWS()
         {
             var FileName = "TestCFWSP.txt";
             var reader = new FileByteReader();
             await reader.GetStream(FileName);
-            var nextByte = await reader.ReadByte();
+            var header = new Header();
+            await header.ReadHeader(reader);
             reader.Dispose(false);
         }
         private async Task<Pop3Proxy> Connect(Pop3Proxy Proxy)
@@ -114,21 +117,10 @@ namespace PopMailDemo.Tests.EmailProxies
             }
         }
 
-        //[TestMethod]
-        //public async Task  MailmessageFromStream()
-        //{
-        //    var path = Windows.ApplicationModel.Package.Current.InstalledLocation.Path;
-        //    var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path + "\\TestCFWSP.txt");
-        //    // Read all bytes in from a file on the disk.
-        //    IBuffer buffer = await Windows.Storage.FileIO.ReadBufferAsync(file);
-        //    var bytes = WindowsRuntimeBufferExtensions.ToArray(buffer);
-        //    // Create a memory stream from those bytes.
-        //    using (MemoryStream memory = new MemoryStream(bytes))
-        //    {
-        //        var Message = new Message.MailMessage(memory);
-        //        Assert.AreEqual(Message.From.Count, 1);
-        //    }
+        [TestMethod]
+        public async Task MailmessageFromStream()
+        {
 
-        //}
+        }
     }
 }

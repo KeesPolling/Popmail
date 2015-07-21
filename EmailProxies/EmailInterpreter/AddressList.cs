@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PopMailDemo.EmailProxies.EmailInterpreter
 {
-    public class AddressList
+    public class AddressList : FieldValue
     {
         public AddressList()
         {
@@ -20,9 +20,8 @@ namespace PopMailDemo.EmailProxies.EmailInterpreter
         }
         public class Group
         {
-            public Group(string GroupName)
+            public Group()
             {
-                this.Name = GroupName;
                 this.Members = new List<Adress>();
             }
             public string Name { get; set; }
@@ -49,49 +48,49 @@ namespace PopMailDemo.EmailProxies.EmailInterpreter
                     Address.Name = Address.Name + value;
                 }
             }
-            List.Add(Address);
-            Address = new AddressList.Adress();
+            if (!String.IsNullOrEmpty(Address.MailBox))
+            { 
+                List.Add(Address);
+            }
         }
-        private void GroupAdd(ref AddressList.Group Group, AddressList.Adress Address, StringBuilder Value)
+        private void GroupAdd(AddressList.Group Group, AddressList.Adress Address, StringBuilder Value)
         {
             // is also an end of address-spec
             AddressAdd(Group.Members, Address, Value);
             this.Groups.Add(Group);
-            Group = null;
         }
 
-        internal async Task<byte> ProcessStream(IpDialog Ip)
+        internal async Task<byte> ReadAddressList(IByteStreamReader Reader)
         {
             var valueBuilder = new StringBuilder();
 
             var eol = new EOL();
-            var nextByte = await Ip.ReadByte();
+            var nextByte = await Reader.ReadByte();
 
             var address = new AddressList.Adress();
-            AddressList.Group group = null;
+            Group group = new Group();
             while (!eol.End)
             {
                 if (nextByte == (byte)SpecialByte.CarriageReturn)
                 {
-                    nextByte = await eol.ProcessEOL(Ip);
+                    nextByte = await eol.ProcessEOL(Reader);
                     continue;
                 }
                 switch (nextByte)
                 {
                     case (byte)SpecialByte.LeftParenthesis: // "(": begin comment
-                        var comment = new Comment();
-                        await comment.Process(Ip);
+                        await ReadComment(Reader);
                         break;
                     case (byte)SpecialByte.Backslash: // "\": begin "quoted character"
-                        nextByte = await Ip.ReadByte();
+                        nextByte = await Reader.ReadByte();
                         valueBuilder.Append(Convert.ToChar(nextByte));
                         break;
                     case (byte)SpecialByte.Quote: //  """: begin quoted string
                         // TODO quotedString ;
-
+                        valueBuilder.Append(await ReadQuotedString(Reader));
                         break;
                     case (byte)SpecialByte.Colon: // ":": = end of group name
-                        group = new AddressList.Group("_valueBuilder.ToString().Trim()");
+                        group.Name = valueBuilder.ToString().Trim();
                         valueBuilder = new StringBuilder();
                         break;
                     case (byte)SpecialByte.LeftAngledBracket: // "<": begin email address  (mailbox)
@@ -105,30 +104,32 @@ namespace PopMailDemo.EmailProxies.EmailInterpreter
                     case (byte)SpecialByte.Comma: // "," : end of name-adress spec
                         AddressAdd
                             (
-                                ((group == null) ? this.Adresses : group.Members),
+                                ((group.Name == null) ? this.Adresses : group.Members),
                                 address,
                                 valueBuilder
                             );
+                        address = new Adress();
+                        valueBuilder = new StringBuilder();
                         break;
                     case (byte)SpecialByte.SemiColon: // ";" End of group
+                        GroupAdd(group, address, valueBuilder);
+                        group = new Group();
+                        address = new Adress();
+                        valueBuilder = new StringBuilder();
+                        break;
                     default: // alle andere gevallen
-                        GroupAdd
-                        (
-                              ref group
-                            , address
-                            , valueBuilder
-                        );
+                        valueBuilder.Append(Convert.ToChar(nextByte));
                         break;
                 }
-                nextByte = await Ip.ReadByte();
+                nextByte = await Reader.ReadByte();
             }
-            if (group == null)
+            if (group.Name == null)
             {
                 AddressAdd(this.Adresses, address, valueBuilder);
             }
             else
             {
-                GroupAdd(ref group, address, valueBuilder);
+                GroupAdd(group, address, valueBuilder);
             }
             return nextByte;
         }
