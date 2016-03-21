@@ -133,10 +133,10 @@ namespace PopMailDemo.Tests.EmailProxies
             }
         }
 
-        [TestMethod]
-        public async Task MailmessageFromStream()
-        {
+        //[TestMethod]
+        //public async Task MailmessageFromStream()
+        //{
 
-        }
+        //}
     }
 }

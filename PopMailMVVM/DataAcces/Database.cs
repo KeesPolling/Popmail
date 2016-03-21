@@ -1,12 +1,11 @@
-﻿using PopMailDemo.MVVM.Model;
+﻿using PopMail.Models;
 using SQLite.Net;
 using SQLite.Net.Async;
 using System;
 using System.IO;
 using Windows.Storage;
-using SQLite.Net.Platform.WinRT;
 
-namespace PopMailDemo.MVVM.DataAcces
+namespace PopMail.DataAcces
 {
     public static class Database
     {
@@ -18,7 +17,7 @@ namespace PopMailDemo.MVVM.DataAcces
 
             try
             {
-                var Platform = new SQLitePlatformWinRT();
+                var Platform = new SQLite.Net.Platform.WinRT.SQLitePlatformWinRT();
                 var DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path,"Storage.SQLite");
                 var ConnectionString = new SQLiteConnectionString(DbPath, true);
                 var dbLockedCon = new SQLiteConnectionWithLock(Platform ,ConnectionString);
@@ -63,6 +62,5 @@ namespace PopMailDemo.MVVM.DataAcces
                 return dbConnection; 
             }
         }
-
     }
 }

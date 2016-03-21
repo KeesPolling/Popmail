@@ -25,6 +25,7 @@
     <DefineConstants>DEBUG;TRACE;NETFX_CORE;WINDOWS_APP</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -100,13 +101,6 @@
     <ErrorReport>prompt</ErrorReport>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-  <ItemGroup>
-    <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
-    <ProjectReference Include="..\MVVM\MVVM.csproj">
-      <Project>{afb390a2-f00e-47af-8210-9432e19a891e}</Project>
-      <Name>MVVM</Name>
-    </ProjectReference>
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="DataStreamInterpreter.cs" />
     <Compile Include="EmailInterpreter\AddressList.cs" />
