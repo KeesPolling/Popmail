@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace PopMailDemo.EmailProxies.EmailInterpreter
+namespace PopMail.EmailProxies.EmailInterpreter
 {
     public class Email
     {
-        public static Header _header;
+        public static Header Header;
         public string Provider { get; set; }
         public string ProviderID { get; set; }
 

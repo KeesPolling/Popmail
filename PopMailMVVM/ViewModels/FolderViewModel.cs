@@ -1,6 +1,5 @@
 ﻿
-using Microsoft.Practices.Prism.Mvvm;
-using Microsoft.Practices.Prism.StoreApps;
+using Prism.Windows.Mvvm;
 using PopMail.DataAcces;
 using PopMail.Models;
 using System;
@@ -10,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace PopMail.ViewModels
 {
-    public class FolderViewModel: ViewModel
+    public class FolderViewModel: ViewModelBase
     {
         private Folder folder;
         private FolderViewModel parent;

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace PopMailDemo.EmailProxies.EmailInterpreter
+namespace PopMail.EmailProxies.EmailInterpreter
 {
     public class HeaderIgnore : FieldValue
     {
@@ -22,7 +18,7 @@ namespace PopMailDemo.EmailProxies.EmailInterpreter
                 }
                 if (nextByte == (byte)SpecialByte.Backslash) // "\": begin "quoted character"
                 {
-                    nextByte = await Reader.ReadByte();
+                    await Reader.ReadByte();
                 }
                 nextByte = await Reader.ReadByte();
             }

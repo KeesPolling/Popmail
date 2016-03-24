@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Windows.Networking.Sockets;
+﻿
 using Windows.Networking;
 
-namespace PopMailDemo.EmailProxies
+namespace PopMail.EmailProxies
 {
     public class Pop3Service
     {   

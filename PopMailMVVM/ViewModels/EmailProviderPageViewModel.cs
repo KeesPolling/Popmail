@@ -1,5 +1,6 @@
-﻿using Microsoft.Practices.Prism.Commands;
-using Microsoft.Practices.Prism.Mvvm;
+﻿using Prism.Commands;
+using Prism.Windows.AppModel;
+using Prism.Windows.Mvvm;
 using PopMail.Models;
 using PopMail.DataAcces;
 using System;
@@ -8,7 +9,7 @@ using System.Windows.Input;
 
 namespace PopMail.ViewModels
 {
-    public class EmailProviderPageViewModel : ViewModel
+    public class EmailProviderPageViewModel : ViewModelBase
     {
         private EmailProvider _emailProvider;
         private DelegateCommand _saveCommand;

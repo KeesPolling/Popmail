@@ -1,8 +1,8 @@
 ﻿using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
-using Microsoft.Practices.Prism.Mvvm;
-using Microsoft.Practices.Prism.StoreApps;
+using Prism.Mvvm;
+using Prism.Windows.Mvvm;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234237
 
@@ -11,28 +11,28 @@ namespace PopMail.Views
     /// <summary>
     /// A basic page that provides characteristics common to most applications.
     /// </summary>
-    public sealed partial class EmailProviderPage : VisualStateAwarePage
+    public sealed partial class EmailProviderPage : SessionStateAwarePage
     {
 
-        private FrameNavigationService navigationHelper;
-        private ViewModel defaultViewModel = new ViewModel();
+        //private FrameNavigationService navigationHelper;
+        //private ViewModel defaultViewModel = new ViewModel();
 
-        /// <summary>
-        /// This can be changed to a strongly typed view model.
-        /// </summary>
-        public ViewModel DefaultViewModel
-        {
-            get { return this.defaultViewModel; }
-        }
+        ///// <summary>
+        ///// This can be changed to a strongly typed view model.
+        ///// </summary>
+        //public ViewModel DefaultViewModel
+        //{
+        //    get { return this.defaultViewModel; }
+        //}
 
-        /// <summary>
-        /// NavigationHelper is used on each page to aid in navigation and 
-        /// process lifetime management
-        /// </summary>
-        public FrameNavigationService NavigationHelper
-        {
-            get { return this.navigationHelper; }
-        }
+        ///// <summary>
+        ///// NavigationHelper is used on each page to aid in navigation and 
+        ///// process lifetime management
+        ///// </summary>
+        //public FrameNavigationService NavigationHelper
+        //{
+        //    get { return this.navigationHelper; }
+        //}
 
 
         public EmailProviderPage()
@@ -93,9 +93,9 @@ namespace PopMail.Views
 
         #endregion
 
-        private void TextBlock_SelectionChanged(object sender, RoutedEventArgs e)
-        {
+        //private void TextBlock_SelectionChanged(object sender, RoutedEventArgs e)
+        //{
 
-        }
+        //}
     }
 }

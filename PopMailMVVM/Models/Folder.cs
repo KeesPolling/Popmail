@@ -11,6 +11,5 @@ namespace PopMail.Models
         public string Name { get; set; }
         [Indexed, ForeignKey(typeof(Folder))] 
         public int Parent { get; set; }
- 
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PopMailDemo.EmailProxies.EmailInterpreter
+namespace PopMail.EmailProxies.EmailInterpreter
 {
     public class IdentificationField : FieldValue
     {

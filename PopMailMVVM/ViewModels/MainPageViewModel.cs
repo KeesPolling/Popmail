@@ -2,22 +2,23 @@
 using System.Collections.Generic;
 using PopMail.Models;
 using PopMail.DataAcces;
-using Microsoft.Practices.Prism.Commands;
-using Microsoft.Practices.Prism.Mvvm;
-using Microsoft.Practices.Prism.Mvvm.Interfaces;
-using Windows.UI.Xaml.Navigation;
+using Prism.Commands;
+using Prism.Windows.Mvvm;
+using Prism.Windows.Navigation;
+
 using System.Threading.Tasks;
 using Windows.UI.Xaml.Controls;
 
 
 namespace PopMail.ViewModels
 {
-    public class MainPageViewModel : ViewModel
+    public class MainPageViewModel : ViewModelBase
     {
         private readonly INavigationService _navigationService;
         private DelegateCommand<ItemClickEventArgs> _providerProperties;
 
         #region FolderItems
+        private FoldersList _foldersList;
         private ObservableCollection<FolderViewModel> _folderItems;
         public ObservableCollection<FolderViewModel> FolderItems
         {
@@ -25,21 +26,13 @@ namespace PopMail.ViewModels
             set { this.SetProperty(ref _folderItems, value); }
         }
         #endregion
-
-        public MainPageViewModel(INavigationService navigationService, ObservableCollection<FolderViewModel> folderItems)
+  
+        public MainPageViewModel()
         {
-            _navigationService = navigationService;
-            _providerProperties = new DelegateCommand<ItemClickEventArgs>(providerProperies);
-            _folderItems = FolderItems;
+          _providerProperties = new DelegateCommand<ItemClickEventArgs>(providerProperies);
         }
    
-        public override async void OnNavigatedTo(object navigationParameter, NavigationMode navigationMode, Dictionary<string, object> viewModelState)
-        {
-            if (_folderItems.Count == 0)
-            {
-                _navigationService.Navigate("EmailProvider", null);
-            }
-        }
+
         public DelegateCommand<ItemClickEventArgs> ToProviderProperties
         {
             get

@@ -8,7 +8,7 @@ using Windows.Networking.Sockets;
 using Windows.Storage;
 using Windows.Storage.Streams;
 
-namespace PopMailDemo.EmailProxies
+namespace PopMail.EmailProxies
 {
     /// <summary>
     /// This class is used for sending a request and receiving a response
@@ -20,11 +20,11 @@ namespace PopMailDemo.EmailProxies
         bool _disposed;
         uint _minBufferSize;
         uint _maxBufferSize;
-        uint _buffersize;
+  //      uint _buffersize;
         StreamSocket _streamSocket;
         DataReader _dataReader;
         DataWriter _dataWriter;
-        StreamWriter _memWriter;
+//        StreamWriter _memWriter;
         internal DataReader Reader
         {
             get
@@ -128,7 +128,7 @@ namespace PopMailDemo.EmailProxies
                     );
                 _maxBufferSize = (node == null) ? (uint)64001 : (uint)node.NodeValue;
             }
-            catch (System.IO.FileNotFoundException fnfe) 
+            catch (System.IO.FileNotFoundException) 
             {
                 _minBufferSize = 1024;
                 _maxBufferSize = 64000;

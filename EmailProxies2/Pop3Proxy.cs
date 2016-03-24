@@ -1,19 +1,12 @@
-﻿//using PopMailDemo.MVVM.Model;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Networking.Sockets;
-using PopMailDemo.EmailProxies.EmailInterpreter;
-//using Windows.Networking;
-//using Windows.Networking.Sockets;
+using PopMail.EmailProxies.EmailInterpreter;
 
-
-namespace PopMailDemo.EmailProxies
+namespace PopMail.EmailProxies
 {
     public class Pop3Proxy: IDisposable
     {
@@ -162,8 +155,7 @@ namespace PopMailDemo.EmailProxies
         {
             var mail = new Email();
             var sendString = string.Format("RETR {0}\r\n", MessageNumber);
-            var AtEnd = false;
-            var inStream = await _socketDialog.GetStream(sendString);
+            await _socketDialog.GetStream(sendString);
 
             return mail;
         }
