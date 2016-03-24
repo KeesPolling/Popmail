@@ -136,6 +136,10 @@
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\EmailProxies\EmailProxies.csproj">
+      <Project>{2ddbcde0-c392-4bc6-b490-b0d18aebf9a3}</Project>
+      <Name>EmailProxies</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PopMailMVVM\PopMail.UILogic.csproj">
       <Project>{dfa730ee-59f2-4986-8a87-59d9dd2c952c}</Project>
       <Name>PopMail.UILogic</Name>
