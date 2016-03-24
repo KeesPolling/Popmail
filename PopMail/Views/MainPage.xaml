@@ -5,7 +5,6 @@
     xmlns:local="using:PopMail.ViewModels"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:storeApps="using:Prism.Windows.AppModel"
     xmlns:mvvm="using:Prism.Windows.Mvvm"
     xmlns:xc="using:WinRTXamlToolkit.Controls"
     xmlns:data="using:WinRTXamlToolkit.Controls.Data"
