@@ -140,7 +140,7 @@
       <Project>{2ddbcde0-c392-4bc6-b490-b0d18aebf9a3}</Project>
       <Name>EmailProxies</Name>
     </ProjectReference>
-    <ProjectReference Include="..\PopMailMVVM\PopMail.UILogic.csproj">
+    <ProjectReference Include="..\UILogic\PopMail.UILogic.csproj">
       <Project>{dfa730ee-59f2-4986-8a87-59d9dd2c952c}</Project>
       <Name>PopMail.UILogic</Name>
     </ProjectReference>

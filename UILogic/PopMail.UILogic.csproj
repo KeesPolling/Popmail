@@ -7,8 +7,8 @@
     <ProjectGuid>{DFA730EE-59F2-4986-8A87-59D9DD2C952C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PopMailMVVM</RootNamespace>
-    <AssemblyName>PopMailMVVM</AssemblyName>
+    <RootNamespace>Popmail.UILogic</RootNamespace>
+    <AssemblyName>UILogic</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion>10.0.10586.0</TargetPlatformVersion>
@@ -117,7 +117,7 @@
     <Compile Include="ViewModels\FoldersList.cs" />
     <Compile Include="ViewModels\FolderViewModel.cs" />
     <Compile Include="ViewModels\MainPageViewModel.cs" />
-    <EmbeddedResource Include="Properties\PopMailMVVM.rd.xml" />
+    <EmbeddedResource Include="Properties\PopMail.UILogic.rd.xml" />
   </ItemGroup>
   <ItemGroup>
     <SDKReference Include="Microsoft.VCLibs, Version=14.0">
