@@ -4,18 +4,22 @@ using Prism.Windows.Mvvm;
 using PopMail.Models;
 using PopMail.DataAcces;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Windows.UI.Xaml.Navigation;
+using Prism.Windows.Navigation;
 
 namespace PopMail.ViewModels
 {
     public class EmailProviderPageViewModel : ViewModelBase
     {
         private EmailProvider _emailProvider;
-        private DelegateCommand _saveCommand;
         private Task _createFolder;
         private bool _hasChanges;
-
+        private INavigationService _navigationService;
+        private DelegateCommand _backCommand; 
         private bool FolderIdExists(int FolderId)
         {
             var db = Database.DbConnection;
@@ -27,36 +31,63 @@ namespace PopMail.ViewModels
         {
                 var rootFolder = new FolderViewModel(RootName);
                 await rootFolder.Save();
-                var Infolder = await rootFolder.AddChild("In");
-                await Infolder.Save();
-                this._emailProvider.InFolderId= Infolder.Id;
-                var OutFolder = await rootFolder.AddChild("Out");
-                await OutFolder.Save();
-                this._emailProvider.OutFolderId= OutFolder.Id;
-                var SentFolder = await rootFolder.AddChild("Sent");
-                await SentFolder.Save();
-                this._emailProvider.SentFolderId = SentFolder.Id;
-                var ConceptsFolder = await rootFolder.AddChild("Concepts");
-                await ConceptsFolder.Save();
-                this._emailProvider.ConceptsFolderId = ConceptsFolder.Id;
+                var infolder = await rootFolder.AddChild("In");
+                await infolder.Save();
+                this._emailProvider.InFolderId= infolder.Id;
+                var outFolder = await rootFolder.AddChild("Out");
+                await outFolder.Save();
+                this._emailProvider.OutFolderId= outFolder.Id;
+                var sentFolder = await rootFolder.AddChild("Sent");
+                await sentFolder.Save();
+                this._emailProvider.SentFolderId = sentFolder.Id;
+                var conceptsFolder = await rootFolder.AddChild("Concepts");
+                await conceptsFolder.Save();
+                this._emailProvider.ConceptsFolderId = conceptsFolder.Id;
         }
-        public EmailProviderPageViewModel()
+        public EmailProviderPageViewModel(INavigationService navigationService)
         {
-            this._emailProvider = new EmailProvider();
-            this._hasChanges = false;
-            this._saveCommand = new DelegateCommand( () => this.Save(),() => this.ReadyForSave());
+            _emailProvider = new EmailProvider();
+            _hasChanges = false;
+            _navigationService = navigationService;
+            SaveCommand = DelegateCommand.FromAsyncHandler(Save ,() => this.ReadyForSave());
         }
-        public EmailProviderPageViewModel(int Id)
+
+        public override async void OnNavigatedTo(NavigatedToEventArgs e, Dictionary<string, object> viewModelState)
         {
-            var db = Database.DbConnection;
-            var provider = db.FindAsync<EmailProvider>(e => e.Id == Id).Result;
-            if (provider == null)
+            string errorMessage = string.Empty;
+            try
             {
-                throw new ArgumentOutOfRangeException("Id", "Id does not exist");
+                LoadingData = true;
+                if (e.NavigationMode == NavigationMode.New)
+                {
+                    if (e.Parameter == null)
+                    {
+                        _emailProvider = new EmailProvider();
+                    }
+                    else
+                    {
+                        var db = Database.DbConnection;
+                       _emailProvider = await db.FindAsync<EmailProvider>(f => f.Id == (int) e.Parameter);
+                        if (_emailProvider == null)
+                        {
+                            _emailProvider = new EmailProvider();
+                        } 
+                    }
+                }
             }
-            this._emailProvider = provider;
+            catch (Exception ex)
+            {
+                errorMessage = string.Format(CultureInfo.CurrentCulture,
+                "GeneralServiceErrorMessage",
+                Environment.NewLine,
+                ex.Message);
+            }
+            finally
+            {
+                LoadingData = false;
+            }
+
         }
-        [RestorableState]
         public int Id
         {
             get
@@ -71,7 +102,6 @@ namespace PopMail.ViewModels
                 }
             }
         }
-        [RestorableState]
         public string Name
         {
             get
@@ -95,7 +125,6 @@ namespace PopMail.ViewModels
                 }
             }
         }
-        [RestorableState]
         public string AccountName
         {
             get
@@ -115,7 +144,6 @@ namespace PopMail.ViewModels
                 }
             }
         }
-        [RestorableState]
         public string ProviderUri
         {
             get
@@ -135,7 +163,6 @@ namespace PopMail.ViewModels
                 }
             }
         }
-        [RestorableState]
         public string ServiceName
         {
             get
@@ -155,7 +182,6 @@ namespace PopMail.ViewModels
                 }
             }
         }
-        [RestorableState]
         public string Password
         {
            get
@@ -175,8 +201,7 @@ namespace PopMail.ViewModels
                 }
             }
         }
-        [RestorableState]
-        public string User
+       public string User
         {
             get 
             { 
@@ -199,14 +224,13 @@ namespace PopMail.ViewModels
                 }
             }
         }
-        [RestorableState]
         public bool HasChanges
         {
             get{return _hasChanges;}
             set
             {
                 _hasChanges = value;
-                _saveCommand.RaiseCanExecuteChanged();
+                SaveCommand.RaiseCanExecuteChanged();
             }
         }
         public bool ReadyForSave()
@@ -221,13 +245,26 @@ namespace PopMail.ViewModels
                     &&  (_hasChanges)
                     );
         }
-        public ICommand SaveCommand
+        public DelegateCommand GoBackCommand
         {
             get
             {
-                return this._saveCommand;
+                if (_backCommand == null)
+                {
+                    _backCommand = new DelegateCommand(
+                        () => _navigationService.GoBack(), () => { return true; });
+                }
+
+                return _backCommand;
+            }
+            set
+            {
+                _backCommand = value;
             }
         }
+        public DelegateCommand SaveCommand { get; private set; }
+        public bool LoadingData { get; private set; }
+
         public async Task Save()
         {
             if (this._emailProvider != null)

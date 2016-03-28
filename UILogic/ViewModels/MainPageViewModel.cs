@@ -36,6 +36,8 @@ namespace PopMail.ViewModels
           _providerProperties = new DelegateCommand<ItemClickEventArgs>(providerProperies);
           _foldersList = new FoldersList();
         }
+
+        
         public bool LoadingData
         {
             get { return _loadingData; }

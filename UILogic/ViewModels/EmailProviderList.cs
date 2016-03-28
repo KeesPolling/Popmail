@@ -15,7 +15,7 @@ namespace PopMail.ViewModels
                 var emailProviders = new List<EmailProviderPageViewModel>();
                 foreach (var Provider in ProviderTable)
                 {
-                    emailProviders.Add(new EmailProviderPageViewModel(Provider.Id));
+                    emailProviders.Add(new EmailProviderPageViewModel(null));
                 }
                 return emailProviders;
             }

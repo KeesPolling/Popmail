@@ -7,6 +7,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:conv="using:WinRTXamlToolkit.Converters"
+    mvvm:ViewModelLocator.AutoWireViewModel="True"
     mc:Ignorable="d"
 >
 
@@ -21,7 +22,7 @@
         * Row 0 contains the back button and page title
         * Row 1 contains the rest of the page layout
     -->
-    <Grid DataContext="local:EmailProvider" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="0,-31,0,31">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="0,-31,0,31">
         <Grid.ChildrenTransitions>
             <TransitionCollection>
                 <EntranceThemeTransition/>
@@ -38,7 +39,7 @@
                 <ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Button x:Name="backButton" Margin="39,59,39,0" Command="{Binding NavigationHelper.GoBackCommand, ElementName=pageRoot}"
+            <Button x:Name="backButton" Margin="39,59,39,0" Command="{Binding GoBackCommand}"
                         Style="{StaticResource NavigationBackButtonNormalStyle}"
                         VerticalAlignment="Top"
                         AutomationProperties.Name="Back"
