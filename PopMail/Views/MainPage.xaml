@@ -30,7 +30,7 @@
             <!--<local:FoldersList x:Key="folderTree"/>-->
         </ResourceDictionary>
     </mvvm:SessionStateAwarePage.Resources>
-    <Grid DataContext="local:MainPageViewModel">
+    <Grid>
     	<Grid.ColumnDefinitions>
     		<ColumnDefinition Width="195*"/>
     		<ColumnDefinition Width="488*"/>
