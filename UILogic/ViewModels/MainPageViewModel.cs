@@ -22,11 +22,12 @@ namespace PopMail.ViewModels
         private bool _loadingData;
 
         #region FolderItems
-        private FoldersList _foldersList;
+        private ObservableCollection<FolderViewModel> _folderItems = new ObservableCollection<FolderViewModel>();
 
         public ObservableCollection<FolderViewModel> FolderItems
         {
-            get { return _foldersList.FolderTree; }
+            get { return _folderItems; }
+            private set { SetProperty(ref _folderItems, value); } 
         }
         #endregion
   
@@ -34,10 +35,8 @@ namespace PopMail.ViewModels
         {
           _navigationService = navigationService;
           _providerProperties = new DelegateCommand<ItemClickEventArgs>(providerProperies);
-          _foldersList = new FoldersList();
         }
-
-        
+       
         public bool LoadingData
         {
             get { return _loadingData; }
@@ -50,8 +49,9 @@ namespace PopMail.ViewModels
             try
             {
                 LoadingData = true;
-                _foldersList.FolderTree = await _foldersList.BuildTree();
-                if (_foldersList.FolderTree.Count == 0)
+                FolderItems = await FolderViewModel.GetRootItems();
+
+                if (FolderItems.Count == 0)
                 {
                     _navigationService.Navigate("EmailProvider",null);
                 }
@@ -74,6 +74,8 @@ namespace PopMail.ViewModels
             //    return;
             //}
         }
+                // Use the ViewModel to store the SelectedIndex of the FlipView so that the value can be set
+
         public DelegateCommand<ItemClickEventArgs> ToProviderProperties
         {
             get

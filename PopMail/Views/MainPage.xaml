@@ -37,14 +37,23 @@
     	</Grid.ColumnDefinitions>
         <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="100" Margin="0,306,0,0" Stroke="Black" VerticalAlignment="Top" Width="100" Grid.Column="1"/>
         <HyperlinkButton Name="Button1" Content="EmailProvider"  HorizontalAlignment="Left" Margin="175,16,0,0" VerticalAlignment="Top" Grid.Column="2" Command="{Binding ToProviderProperties}"/>
-        <xc:TreeView ItemsSource="{Binding FolderItems, Mode=TwoWay}" Grid.Column="0" Grid.ColumnSpan="1" HorizontalAlignment="Left" Height="768" VerticalAlignment="Bottom">
+        <xc:TreeView 
+            ItemsSource="{Binding FolderItems, Mode=TwoWay}" 
+            Grid.Column="0" Grid.ColumnSpan="1" 
+            HorizontalAlignment="Left" 
+            Height="768" 
+            VerticalAlignment="Bottom"
+            
+        >
+            <!--IsSelectedBindingPath="IsSelected"
+            IsExpandedBindingPath="IsExpanded"-->
             <xc:TreeView.ItemTemplate>
                 <DataTemplate>
                     <data:DataTemplateExtensions.Hierarchy>
                         <data:HierarchicalDataTemplate ItemsSource="{Binding Children, Mode=TwoWay}" />
                     </data:DataTemplateExtensions.Hierarchy>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding Name, Mode=TwoWay}"/>
+                        <TextBlock Text="{Binding Name, Mode=TwoWay}" />
                     </StackPanel>
                 </DataTemplate>
             </xc:TreeView.ItemTemplate>

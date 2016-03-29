@@ -11,28 +11,30 @@ namespace PopMail.ViewModels
 {
     public class FolderViewModel: ViewModelBase
     {
-        private Folder folder;
-        private FolderViewModel parent;
-        private string path;
-        private ObservableCollection<FolderViewModel> children =  new ObservableCollection<FolderViewModel>();
+        private ObservableCollection<FolderViewModel> _visualTree;
+        private Folder _folder;
+        private FolderViewModel _parent;
+        private string _path;
+        private ObservableCollection<FolderViewModel> _children =  new ObservableCollection<FolderViewModel>();
         public static async Task<ObservableCollection<FolderViewModel>> GetRootItems()
         {
             var db = Database.DbConnection;
-            var ChildList = new ObservableCollection<FolderViewModel>();
-            var Children = await db.Table<Folder>().Where(f => f.Parent == 0).ToListAsync();
-            foreach (Folder Childfolder in Children)
+            var childList = new ObservableCollection<FolderViewModel>();
+            var children = await db.Table<Folder>().Where(f => f.Parent == 0).ToListAsync();
+            foreach (Folder childfolder in children)
             {
-                var Child = new FolderViewModel(Childfolder, null);
-                ChildList.Add(Child);
+                var child = new FolderViewModel(childfolder, null, childList );
+                childList.Add(child);
+                await child.ReadChildrenFromDb();
             }
-            return ChildList;
+            return childList;
         }
         #region private Constructors
-        internal FolderViewModel(Folder MyFolder, FolderViewModel MyParent)
+        internal FolderViewModel(Folder myFolder, FolderViewModel myParent, ObservableCollection<FolderViewModel> visualTree )
         {
-            this.folder = MyFolder;
-            SetParent(MyParent);
-            ReadChildrenFromDb();
+            this._folder = myFolder;
+            _visualTree = visualTree;
+            Parent = myParent;
         }
         #endregion
 
@@ -89,7 +91,7 @@ namespace PopMail.ViewModels
         {
             var MyIds = new List<int>();
             MyIds.Add(this.Id);
-            foreach (var Child in children)
+            foreach (var Child in _children)
             {
                 MyIds.AddRange(await Child.GetIdTree());
             }
@@ -103,14 +105,14 @@ namespace PopMail.ViewModels
         {
             var db = Database.DbConnection;
             var ChildList = new ObservableCollection<FolderViewModel>();
-            var Children = await db.Table<Folder>().Where(f => f.Parent == this.folder.Id).ToListAsync();
+            var Children = await db.Table<Folder>().Where(f => f.Parent == this._folder.Id).ToListAsync();
 
             foreach (Folder Childfolder in Children)
             {
-                var Child = new FolderViewModel(Childfolder, this);
+                var Child = new FolderViewModel(Childfolder, this, _visualTree);
                 ChildList.Add(Child);
             }
-            children = ChildList;
+            _children = ChildList;
             OnPropertyChanged("Children");
         }
         #endregion
@@ -119,7 +121,7 @@ namespace PopMail.ViewModels
         {
             var Saved = false;
             var i = 0; //number of records inserted or updated.
-            if (this.folder != null)
+            if (this._folder != null)
             {
                 if (CheckParent(Children).Result)
                 {
@@ -129,56 +131,57 @@ namespace PopMail.ViewModels
                         Children.Add(this.Id);
                         if (await this.Parent.Save(Children))
                         {
-                            this.folder.Parent = Parent.Id;
+                            this._folder.Parent = Parent.Id;
                         }
                         else
                         {
-                            this.parent = null;
+                            this._parent = null;
                         }
                     }
-                    if (this.folder.Id == 0)
+                    if (this._folder.Id == 0)
                     {
-                        i = await db.InsertAsync(folder);
+                        i = await db.InsertAsync(_folder);
                     }
                     else
                     {
-                        i = await db.UpdateAsync(folder);
+                        i = await db.UpdateAsync(_folder);
                     }
                     return (i == 1);
                 }
             }
             return Saved;
         }
-        private async Task SetParent(FolderViewModel Parent)
+        private async Task SetParent(FolderViewModel parent)
         {
-            if (parent  != null)
+            if (_parent  != null)
             {
-                await parent.RemoveChild(this);
+                await _parent.RemoveChild(this);
             }
-            parent = Parent;
-            if (parent != null)
+            _parent = parent;
+            if (_parent != null)
             {
-                if (Parent.Id == 0)
+                if (parent.Id == 0)
                 {
-                    await Parent.Save();
+                    await parent.Save();
                 }
-                folder.Parent = Parent.Id;
+                _folder.Parent = parent.Id;
                 await this.Save();
-                parent.OnPropertyChanged("Children");
+                _parent.OnPropertyChanged("Children");
             }
-            path = await this.GetPath();
+            _path = await this.GetPath();
             OnPropertyChanged("Path");
         }
         internal int Id
         {
-            get { return folder.Id; }
+            get { return _folder.Id; }
         }
 
         #region publicConstructors
-        public FolderViewModel(string Name)
+        public FolderViewModel(string name, ObservableCollection<FolderViewModel> visualTree)
         {
-            this.folder = new Folder();
-            this.Name = Name;
+            _folder = new Folder();
+            Name = name;
+            _visualTree = visualTree;
         }
         #endregion
         #region publicProperties
@@ -186,17 +189,17 @@ namespace PopMail.ViewModels
         {
             get
             {
-                if (this.folder == null)
+                if (this._folder == null)
                 {
                     return string.Empty;
                 }
-                return this.folder.Name;
+                return this._folder.Name;
             }
              set
             {
-                if (this.folder != null)
+                if (this._folder != null)
                 {
-                    this.folder.Name = value;
+                    this._folder.Name = value;
                 }
             }
         }
@@ -204,7 +207,7 @@ namespace PopMail.ViewModels
         {
             get
             {
-                return this.parent;
+                return this._parent;
             }
             private set 
             { 
@@ -215,34 +218,76 @@ namespace PopMail.ViewModels
         {
             get
             {
-                return path;
+                return _path;
             }
         }
+//        public bool IsSelected
+//        {
+//            get { return _isSelected; }
+//            set
+//            {
+//                if (this.SetProperty(ref _isSelected, value) && value)
+//                {
+//                    if (!_everSelected)
+//                    {
+//                        _everSelected = true;
+//                    }
+
+//                    this.TreeModel.SelectedItem = this;
+//                }
+//            }
+//        }
+//        #endregion
+
+//        #region IsExpanded
+//        private bool _isExpanded;
+//        private bool _isSelected;
+//        private bool _everSelected;
+
+//        public bool IsExpanded
+//        {
+//            get { return _isExpanded; }
+//            set
+//            {
+//                if (this.SetProperty(ref _isExpanded, value) &&
+//                    value &&
+//                    !_everExpanded)
+//                {
+//                    _everExpanded = true;
+//#pragma warning disable 4014
+//                    LoadChildrenAsync();
+//#pragma warning restore 4014
+//                }
+//            }
+//        }
+//        #endregion
+
+
         public ObservableCollection<FolderViewModel> Children
         {
             get
             {
-                return children;
+                return _children;
             }
         }
         #endregion
 
         #region publicMethods
-        public async Task <FolderViewModel> AddChild(string Name)
+        public async Task <FolderViewModel> AddChild(string name)
         {
-            var Child = new FolderViewModel(Name);
-            var a = await this.AddChild(Child);
-            return Child;
+            var child = new FolderViewModel(name, _visualTree);
+            var a = await this.AddChild(child);
+            return child;
         }
         public async Task<string> GetPath()
         {
-            if (this.parent == null)
+            if (this._parent == null)
             {
                 return "\\".Insert(2, Name);
             }
             else
             {
-                var concatPath = await parent.GetPath();
+                var concatPath = await _parent.GetPath();
                 concatPath = string.Concat(concatPath, "\\", Name);
                 return concatPath;
             }
@@ -260,7 +305,7 @@ namespace PopMail.ViewModels
                 if (!hasParent)
                 {
                     Child.Parent = this;
-                    this.children.Add(Child);
+                    this._children.Add(Child);
                     this.OnPropertyChanged("Children");
                     return true;
                 }
@@ -271,7 +316,7 @@ namespace PopMail.ViewModels
         {
             Child.Parent = null;
             await Child.Save();
-            if (this.children.Remove(Child))
+            if (this._children.Remove(Child))
             {
                 this.OnPropertyChanged("Children");
                 return true;
@@ -284,12 +329,29 @@ namespace PopMail.ViewModels
         }
         public async Task Save()
         {
-            if (this.folder != null)
+            if (this._folder != null)
             {
                 var parentage = new List<int>();
                 var Saved = await this.Save(parentage);
             }
         }
         #endregion
+        #region virtualMethods
+#pragma warning disable 1998
+        internal virtual async Task LoadPropertiesAsync()
+        {
+        }
+
+        internal virtual async Task LoadChildrenAsync()
+        {
+        }
+
+        internal virtual async Task RefreshAsync()
+        {
+        }
+        #endregion virtualMethods
+
+#pragma warning restore 1998
+
     }
 }

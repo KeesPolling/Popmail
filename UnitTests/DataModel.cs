@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+﻿using System.Collections.ObjectModel;
+using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using PopMail.DataAcces;
 using PopMail.Models;
 using PopMail.ViewModels;
@@ -15,7 +16,7 @@ namespace PopMail.UnitTests
         public async Task EmailProvider()
         {
            
-            EmailProviderPageViewModel provider = new EmailProviderPageViewModel();
+            EmailProviderPageViewModel provider = new EmailProviderPageViewModel(null);
             provider.Name = "Caiway";
             provider.ProviderUri = (new HostName("pop.caiway.net").DisplayName);
             provider.ServiceName = "110";
@@ -38,7 +39,8 @@ namespace PopMail.UnitTests
         [TestMethod]
         public async Task FolderVM1()
         {
-            var folder = new FolderViewModel("Test");
+            var tree = new ObservableCollection<FolderViewModel>();
+            var folder = new FolderViewModel("Test", tree);
             await folder.Save();
             var root = await FolderViewModel.GetRootItems();
             Assert.AreNotEqual(0, root.Count(), "Folder niet aangemaakt");
@@ -46,7 +48,8 @@ namespace PopMail.UnitTests
         [TestMethod]
         public async Task FolderVMparent1()
         {
-            var parentFolder = new FolderViewModel("TestParent");
+            var tree = new ObservableCollection<FolderViewModel>();
+            var parentFolder = new FolderViewModel("TestParent", tree);
             await parentFolder.Save();
             var testFolder = await parentFolder.AddChild("Test");
             await testFolder.Save();
@@ -58,7 +61,8 @@ namespace PopMail.UnitTests
         [TestMethod]
         public async Task FolderVMRecusie1()
         {
-            var testFolder = new FolderViewModel("TestParent");
+            var tree = new ObservableCollection<FolderViewModel>();
+            var testFolder = new FolderViewModel("TestParent", tree);
             await testFolder.Save();
             var testChild = await testFolder.AddChild(testFolder);
             await testFolder.Save();
@@ -68,7 +72,8 @@ namespace PopMail.UnitTests
         [TestMethod]
         public async Task FolderVMaddChild()
         {
-            var testFolder = new FolderViewModel("TestParent");
+            var tree = new ObservableCollection<FolderViewModel>();
+            var testFolder = new FolderViewModel("TestParent", tree);
             await testFolder.Save();
             var test = await testFolder.AddChild("testChild");
             await test.Save();

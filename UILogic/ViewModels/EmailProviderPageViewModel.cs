@@ -29,21 +29,22 @@ namespace PopMail.ViewModels
 
         private async Task AddAllFolders(string RootName)
         {
-                var rootFolder = new FolderViewModel(RootName);
-                await rootFolder.Save();
-                var infolder = await rootFolder.AddChild("In");
-                await infolder.Save();
-                this._emailProvider.InFolderId= infolder.Id;
-                var outFolder = await rootFolder.AddChild("Out");
-                await outFolder.Save();
-                this._emailProvider.OutFolderId= outFolder.Id;
-                var sentFolder = await rootFolder.AddChild("Sent");
-                await sentFolder.Save();
-                this._emailProvider.SentFolderId = sentFolder.Id;
-                var conceptsFolder = await rootFolder.AddChild("Concepts");
-                await conceptsFolder.Save();
-                this._emailProvider.ConceptsFolderId = conceptsFolder.Id;
-        }
+            var tree = await FolderViewModel.GetRootItems();
+            var rootFolder = new FolderViewModel(RootName, tree);
+            await rootFolder.Save();
+            var infolder = await rootFolder.AddChild("In");
+            await infolder.Save();
+            this._emailProvider.InFolderId= infolder.Id;
+            var outFolder = await rootFolder.AddChild("Out");
+            await outFolder.Save();
+            this._emailProvider.OutFolderId= outFolder.Id;
+            var sentFolder = await rootFolder.AddChild("Sent");
+            await sentFolder.Save();
+            this._emailProvider.SentFolderId = sentFolder.Id;
+            var conceptsFolder = await rootFolder.AddChild("Concepts");
+            await conceptsFolder.Save();
+            this._emailProvider.ConceptsFolderId = conceptsFolder.Id;
+    }
         public EmailProviderPageViewModel(INavigationService navigationService)
         {
             _emailProvider = new EmailProvider();
