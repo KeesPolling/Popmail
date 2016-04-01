@@ -37,18 +37,18 @@ namespace PopMail.UnitTests
             Assert.IsNotNull(result, "Folder niet aangemaakt");
         }
         [TestMethod]
-        public async Task FolderVM1()
+        public async Task FolderVm1()
         {
-            var tree = new ObservableCollection<FolderViewModel>();
+            var tree = new FolderTreeViewModel();
             var folder = new FolderViewModel("Test", tree);
             await folder.Save();
-            var root = await FolderViewModel.GetRootItems();
+            var root = tree.Children;
             Assert.AreNotEqual(0, root.Count(), "Folder niet aangemaakt");
         }
         [TestMethod]
-        public async Task FolderVMparent1()
+        public async Task FolderVmparent1()
         {
-            var tree = new ObservableCollection<FolderViewModel>();
+            var tree = new FolderTreeViewModel();
             var parentFolder = new FolderViewModel("TestParent", tree);
             await parentFolder.Save();
             var testFolder = await parentFolder.AddChild("Test");
@@ -59,9 +59,9 @@ namespace PopMail.UnitTests
             Assert.AreEqual("Test", parentFolder.Children[0].Name, false);
         }
         [TestMethod]
-        public async Task FolderVMRecusie1()
+        public async Task FolderVmRecusie1()
         {
-            var tree = new ObservableCollection<FolderViewModel>();
+            var tree = new FolderTreeViewModel();
             var testFolder = new FolderViewModel("TestParent", tree);
             await testFolder.Save();
             var testChild = await testFolder.AddChild(testFolder);
@@ -72,7 +72,7 @@ namespace PopMail.UnitTests
         [TestMethod]
         public async Task FolderVMaddChild()
         {
-            var tree = new ObservableCollection<FolderViewModel>();
+            var tree = new FolderTreeViewModel();
             var testFolder = new FolderViewModel("TestParent", tree);
             await testFolder.Save();
             var test = await testFolder.AddChild("testChild");

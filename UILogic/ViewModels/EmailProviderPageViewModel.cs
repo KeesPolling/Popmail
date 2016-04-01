@@ -20,17 +20,16 @@ namespace PopMail.ViewModels
         private bool _hasChanges;
         private INavigationService _navigationService;
         private DelegateCommand _backCommand; 
-        private bool FolderIdExists(int FolderId)
+        private bool FolderIdExists(int folderId)
         {
             var db = Database.DbConnection;
-            var folder = db.FindAsync<Folder>(f => f.Id == FolderId).Result;
+            var folder = db.FindAsync<Folder>(f => f.Id == folderId).Result;
             return (folder != null);
         }
 
-        private async Task AddAllFolders(string RootName)
+        private async Task AddAllFolders(string rootName)
         {
-            var tree = await FolderViewModel.GetRootItems();
-            var rootFolder = new FolderViewModel(RootName, tree);
+            var rootFolder = new FolderViewModel(rootName, null);
             await rootFolder.Save();
             var infolder = await rootFolder.AddChild("In");
             await infolder.Save();

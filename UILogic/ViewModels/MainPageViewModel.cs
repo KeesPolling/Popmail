@@ -18,8 +18,12 @@ namespace PopMail.ViewModels
     public class MainPageViewModel : ViewModelBase
     {
         private INavigationService _navigationService;
-        private DelegateCommand<ItemClickEventArgs> _providerProperties;
-        private bool _loadingData;
+
+        public MainPageViewModel(INavigationService navigationService)
+        {
+          _navigationService = navigationService;
+          _providerProperties = new DelegateCommand<ItemClickEventArgs>(providerProperies);
+        }
 
         #region FolderItems
         private ObservableCollection<FolderViewModel> _folderItems = new ObservableCollection<FolderViewModel>();
@@ -27,21 +31,27 @@ namespace PopMail.ViewModels
         public ObservableCollection<FolderViewModel> FolderItems
         {
             get { return _folderItems; }
-            private set { SetProperty(ref _folderItems, value); } 
+            private set { SetProperty(ref _folderItems, value); }
         }
         #endregion
-  
-        public MainPageViewModel(INavigationService navigationService)
+        #region FolderTree
+        private FolderTreeViewModel _folderTree;
+
+        public FolderTreeViewModel FolderTree
         {
-          _navigationService = navigationService;
-          _providerProperties = new DelegateCommand<ItemClickEventArgs>(providerProperies);
+            get { return _folderTree;}
+            private set { SetProperty(ref _folderTree, value); }
         }
-       
+        #endregion
+        #region LoadingData
+        private bool _loadingData;
+
         public bool LoadingData
         {
             get { return _loadingData; }
             private set { SetProperty(ref _loadingData, value); }
         }
+        #endregion
 
         public override async void OnNavigatedTo(NavigatedToEventArgs e, Dictionary<string, object> viewModelState)
         {
@@ -49,7 +59,9 @@ namespace PopMail.ViewModels
             try
             {
                 LoadingData = true;
-                FolderItems = await FolderViewModel.GetRootItems();
+                FolderTree = new FolderTreeViewModel();
+                await FolderTree.Refresh();
+                FolderItems = FolderTree.Children;
 
                 if (FolderItems.Count == 0)
                 {
@@ -74,7 +86,9 @@ namespace PopMail.ViewModels
             //    return;
             //}
         }
-                // Use the ViewModel to store the SelectedIndex of the FlipView so that the value can be set
+        // Use the ViewModel to store the SelectedIndex of the FlipView so that the value can be set
+        #region Commands
+        private DelegateCommand<ItemClickEventArgs> _providerProperties;
 
         public DelegateCommand<ItemClickEventArgs> ToProviderProperties
         {
@@ -87,5 +101,6 @@ namespace PopMail.ViewModels
         {
             _navigationService.Navigate("EmailProvider", null);
         }
+        #endregion
     }
 }

@@ -93,6 +93,8 @@ Global
 		{951B4F24-D10B-4D45-9C79-AF30F222F68A}.Release|x64.Build.0 = Release|x64
 		{951B4F24-D10B-4D45-9C79-AF30F222F68A}.Release|x64.Deploy.0 = Release|x64
 		{951B4F24-D10B-4D45-9C79-AF30F222F68A}.Release|x86.ActiveCfg = Release|x86
+		{951B4F24-D10B-4D45-9C79-AF30F222F68A}.Release|x86.Build.0 = Release|x86
+		{951B4F24-D10B-4D45-9C79-AF30F222F68A}.Release|x86.Deploy.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
