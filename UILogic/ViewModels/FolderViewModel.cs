@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using Windows.UI.Notifications;
+using SQLite.Net.Interop;
 
 namespace PopMail.ViewModels
 {
@@ -56,35 +57,36 @@ namespace PopMail.ViewModels
 
         #region CheckParent
 
-        private async Task<bool> CheckParent(List<int> ids)
+        private bool CheckParent(List<int> ids)
         {
             ids.Add(this.Id);
-            if (this.Parent == null) return await CheckChildren();
+            if (this.Parent == null) //rootfolder..
+                return  CheckChildren(new List<int>());
             if (ids.Contains(Parent.Id)) return false;
-            return await Parent.CheckParent(ids);
+            var checkedOk = CheckParent(ids);
+            return checkedOk;
         }
 
-        private async Task<bool> CheckChildren()
+        private bool CheckChildren(List<int> myIds)
         {
             // myIds contains the Id of the root and all of its descendants
             // In a valid tree all ids should occur only once.
-            var myIds = await this.GetIdTree();
-
-            var listm = myIds.Where(m => myIds.FindAll(s => s.Equals(m)).Count > 1);
-            return (!listm.Any());
-        }
-
-        private async Task<List<int>> GetIdTree()
-        {
-            var myIds = new List<int>();
             myIds.Add(this.Id);
             foreach (var child in _children)
             {
-                myIds.AddRange(await child.GetIdTree());
+                if (myIds.Contains(child.Id))
+                {
+                    return false;
+                }
+                var checkChild = child.CheckChildren(myIds);
+                if (!checkChild) return false;
             }
-            
-            return myIds;
+            return true;
         }
+
+        //private async Task<List<int>> GetIdTree()
+        //{
+        // }
         #endregion
         #region ReadChildren
         private async Task ReadChildrenFromDb(FolderTreeViewModel folderTree)
@@ -107,7 +109,8 @@ namespace PopMail.ViewModels
         {
             var i = 0; //number of records inserted or updated.
             if (_folder == null) return false;
-            if (!(await CheckParent(children))) return false;
+            var checkedOk = CheckParent(children);
+            if (!checkedOk) return false;
 
             var db = Database.DbConnection;
             if (this.Parent != null)
@@ -129,6 +132,21 @@ namespace PopMail.ViewModels
             else
             {
                 i = await db.UpdateAsync(_folder);
+            }
+            // a folder with no parent should be added to the FolderTree.Children
+            // single folders in a root are not visible if it has children (see this.GetRootItems)
+            // a new rootfolder should be added to the invisible rootfolder.
+            if (Parent == null)
+            {
+                if (_visualTree.Children == null) _visualTree.Children = new ObservableCollection<FolderViewModel>();
+                if (_visualTree.Children.Count == 0)
+                {
+                    _visualTree.Children.Add(this);
+                }
+                else
+                {
+                    _folder.Parent = _visualTree.Children[0]._folder.Parent;
+                }
             }
             return (i == 1);
         }
@@ -183,7 +201,7 @@ namespace PopMail.ViewModels
             {
                 if (this._folder != null)
                 {
-                    this._folder.Name = value;
+                    _folder.Name = value;
                 }
             }
         }
@@ -277,8 +295,7 @@ namespace PopMail.ViewModels
         }
         public async Task<bool> AddChild(FolderViewModel Child)
         {
-            var Ids = await Child.GetIdTree();
-            if (this.CheckParent(Ids).Result)
+            if (this.CheckParent(new List<int>()))
             {
                 var hasParent = false;
                 if (Child.Parent != null)
@@ -316,7 +333,6 @@ namespace PopMail.ViewModels
             {
                 var parentage = new List<int>();
                 var Saved = await this.Save(parentage);
-                await _visualTree?.Refresh();
             }
         }
         #endregion

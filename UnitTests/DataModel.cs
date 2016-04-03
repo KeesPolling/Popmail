@@ -42,6 +42,7 @@ namespace PopMail.UnitTests
             var tree = new FolderTreeViewModel();
             var folder = new FolderViewModel("Test", tree);
             await folder.Save();
+          
             var root = tree.Children;
             Assert.AreNotEqual(0, root.Count(), "Folder niet aangemaakt");
         }
@@ -68,6 +69,7 @@ namespace PopMail.UnitTests
             await testFolder.Save();
             Assert.IsNotNull(testFolder, "Folder niet aangemaakt");
             Assert.IsNull(testFolder.Parent, "Parent recursie!");
+            Assert.AreNotEqual(testFolder.Children.Count, 0, "Child recursie!");
         }
         [TestMethod]
         public async Task FolderVMaddChild()

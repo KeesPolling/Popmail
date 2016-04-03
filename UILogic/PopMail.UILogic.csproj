@@ -108,6 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataAcces\Database.cs" />
+    <Compile Include="Models\Configuration.cs" />
     <Compile Include="Models\Email.cs" />
     <Compile Include="Models\EmailProvider.cs" />
     <Compile Include="Models\Folder.cs" />
