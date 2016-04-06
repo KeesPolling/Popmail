@@ -1,4 +1,4 @@
-﻿using PopMail.Models;
+﻿using Popmail.UILogic.Models;
 using SQLite.Net;
 using SQLite.Net.Async;
 using System;
@@ -33,6 +33,7 @@ namespace PopMail.DataAcces
                      , typeof(EmailFrom)
                      , typeof(EmailSender)
                      , typeof(EmailReplyTo)
+                     , typeof(Settings)
                 };
                 var d = db.CreateTablesAsync(Tables).Result;
                 return db;

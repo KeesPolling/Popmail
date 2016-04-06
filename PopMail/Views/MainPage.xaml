@@ -1,14 +1,17 @@
 ﻿<mvvm:SessionStateAwarePage
     x:Class="PopMail.Views.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:PopMail.ViewModels"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Popmail.UILogic.ViewModels"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:designViewModels="using:PopMail.DesignViewModels"
     xmlns:mvvm="using:Prism.Windows.Mvvm"
     xmlns:xc="using:WinRTXamlToolkit.Controls"
     xmlns:data="using:WinRTXamlToolkit.Controls.Data"
     mvvm:ViewModelLocator.AutoWireViewModel="True"
+    d:DataContext="{d:DesignInstance designViewModels:MainPageDesignViewModel,
+                                                            IsDesignTimeCreatable=True}"
     mc:Ignorable="d">
 
     <mvvm:SessionStateAwarePage.Resources>
@@ -31,15 +34,23 @@
         </ResourceDictionary>
     </mvvm:SessionStateAwarePage.Resources>
     <Grid>
-    	<Grid.ColumnDefinitions>
-    		<ColumnDefinition Width="195*"/>
-    		<ColumnDefinition Width="488*"/>
-    	</Grid.ColumnDefinitions>
-        <Rectangle Fill="#FFF4F4F5" HorizontalAlignment="Left" Height="100" Margin="0,306,0,0" Stroke="Black" VerticalAlignment="Top" Width="100" Grid.Column="1"/>
-        <HyperlinkButton Name="Button1" Content="EmailProvider"  HorizontalAlignment="Left" Margin="175,16,0,0" VerticalAlignment="Top" Grid.Column="2" Command="{Binding ToProviderProperties}"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="400"/>
+            <ColumnDefinition Width="488*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="100"/>
+            <RowDefinition Height ="Auto"/>
+        </Grid.RowDefinitions>
+        <HyperlinkButton Name="Button1" Content="EmailProvider"  HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="0" Grid.Column="1" Command="{Binding ToProviderProperties}"/>
+        <ComboBox x:Name="comboBox" HorizontalAlignment="Center"  VerticalAlignment="Bottom" Width="Auto" Grid.Row ="0" Grid.Column="0" 
+                  ItemsSource="{Binding AccountsList}" 
+                  DisplayMemberPath="Name"
+                  SelectedValuePath ="Id"
+                  SelectedIndex ="{Binding SelectedAccountIndex, Mode=TwoWay}"/>
         <xc:TreeView 
             ItemsSource="{Binding FolderItems, Mode=TwoWay}" 
-            Grid.Column="0" Grid.ColumnSpan="1" 
+            Grid.Row ="1" Grid.Column="0" Grid.ColumnSpan="1" 
             HorizontalAlignment="Left" 
             Height="768" 
             VerticalAlignment="Bottom"

@@ -7,7 +7,7 @@
     <ProjectGuid>{951B4F24-D10B-4D45-9C79-AF30F222F68A}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>UnitTests</RootNamespace>
+    <RootNamespace>PopMail.UnitTests</RootNamespace>
     <AssemblyName>UnitTests</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
@@ -93,6 +93,9 @@
     <Content Include="EmailProxiesMock.zip">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Storage.SQLite">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="project.json" />
     <SDKReference Include="Microsoft.VCLibs, Version=14.0">
       <Name>Visual C++ 2015 Runtime for Universal Windows Platform Apps</Name>
@@ -104,6 +107,7 @@
     <SDKReference Include="TestPlatform.Universal, Version=$(UnitTestPlatformVersion)" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MainPageViewmodeTest.cs" />
     <Compile Include="DataModel.cs" />
     <Compile Include="FileByteReader.cs" />
     <Compile Include="Pop3.cs" />

@@ -50,7 +50,7 @@ namespace PopMail
 
             ViewModelLocationProvider.SetDefaultViewTypeToViewModelTypeResolver((viewType) =>
             {
-                var viewModelTypeName = string.Format(CultureInfo.InvariantCulture, "PopMail.ViewModels.{0}ViewModel, UILogic, Version=1.0.0.0, Culture=neutral", viewType.Name);
+                var viewModelTypeName = string.Format(CultureInfo.InvariantCulture, "Popmail.UILogic.ViewModels.{0}ViewModel, UILogic, Version=1.0.0.0, Culture=neutral", viewType.Name);
                 var viewModelType = Type.GetType(viewModelTypeName);
                 if (viewModelType == null)
                 {

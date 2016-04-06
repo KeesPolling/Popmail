@@ -98,6 +98,10 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DesignViewModels\AccountDesignViewModelcs.cs" />
+    <Compile Include="DesignViewModels\FolderDesignViewModel.cs" />
+    <Compile Include="DesignViewModels\FolderTreeDesignViewModel.cs" />
+    <Compile Include="DesignViewModels\MainPageDesignViewModel.cs" />
     <Compile Include="Views\MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>

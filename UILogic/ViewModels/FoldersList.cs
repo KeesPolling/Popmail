@@ -1,13 +1,13 @@
 ﻿//using System.Collections.ObjectModel;
 //using Prism.Windows.AppModel;
 //using Prism.Windows.Mvvm;
-//using PopMail.Models;
+//using Popmail.UILogic.Models;
 //using PopMail.DataAcces;
 ////using System;
 //using System.Threading.Tasks;
 ////using System.Windows.Input;
 
-//namespace PopMail.ViewModels
+//namespace Popmail.UILogic.ViewModels
 //{
 //    public class FoldersList : ViewModelBase
 //    {

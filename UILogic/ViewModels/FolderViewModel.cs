@@ -1,7 +1,7 @@
 ﻿
 using Prism.Windows.Mvvm;
 using PopMail.DataAcces;
-using PopMail.Models;
+using Popmail.UILogic.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using Windows.UI.Notifications;
 using SQLite.Net.Interop;
 
-namespace PopMail.ViewModels
+namespace Popmail.UILogic.ViewModels
 {
     public class FolderViewModel: ViewModelBase
     {

@@ -4,7 +4,7 @@ using SQLiteNetExtensions.Attributes;
 using System;
 using System.Collections.Generic;
 
-namespace PopMail.Models
+namespace Popmail.UILogic.Models
 {
     class Email
     {

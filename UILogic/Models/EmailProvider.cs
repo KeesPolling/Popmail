@@ -2,7 +2,7 @@
 using SQLite.Net.Attributes;
 using SQLiteNetExtensions.Attributes;
 
-namespace PopMail.Models
+namespace Popmail.UILogic.Models
 {
     public class EmailProvider
     {

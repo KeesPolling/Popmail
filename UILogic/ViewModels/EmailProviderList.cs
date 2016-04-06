@@ -1,8 +1,8 @@
-﻿using PopMail.Models;
+﻿using Popmail.UILogic.Models;
 using PopMail.DataAcces;
 using System.Collections.Generic;
 
-namespace PopMail.ViewModels
+namespace Popmail.UILogic.ViewModels
 {
     public static class EmailProviderList
     {

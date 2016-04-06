@@ -1,8 +1,7 @@
-﻿using System.Collections.ObjectModel;
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+﻿using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using PopMail.DataAcces;
-using PopMail.Models;
-using PopMail.ViewModels;
+using Popmail.UILogic.Models;
+using Popmail.UILogic.ViewModels;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Networking;

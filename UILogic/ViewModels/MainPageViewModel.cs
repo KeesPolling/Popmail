@@ -1,19 +1,17 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
-using PopMail.Models;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Navigation;
 using PopMail.DataAcces;
+using Popmail.UILogic.ViewModels;
 using Prism.Commands;
+using Prism.Windows.AppModel;
 using Prism.Windows.Mvvm;
 using Prism.Windows.Navigation;
 
-using System.Threading.Tasks;
-using Windows.UI.Xaml.Controls;
-using Prism.Logging;
-
-
-namespace PopMail.ViewModels
+namespace Popmail.UILogic.ViewModels
 {
     public class MainPageViewModel : ViewModelBase
     {
@@ -24,6 +22,34 @@ namespace PopMail.ViewModels
           _navigationService = navigationService;
           _providerProperties = new DelegateCommand<ItemClickEventArgs>(providerProperies);
         }
+        #region AccountsList
+
+        private ObservableCollection<AccountViewModel> _accountsList;
+
+        public ObservableCollection<AccountViewModel> AccountsList
+        {
+            get { return _accountsList; }
+            private set { SetProperty(ref _accountsList,  value); }
+        }
+
+        public bool AccountsListVisibility
+        {
+            get { return true; }
+        }
+
+        private int _selectedAccountIndex;
+        [RestorableState]
+        public int SelectedAccountIndex
+        {
+            get { return _selectedAccountIndex; }
+            set
+            {
+                SetProperty(ref _selectedAccountIndex, value);
+                SettingsMethods.SetSetting("last used account", value.ToString());
+            }
+        }
+
+        #endregion
 
         #region FolderItems
         private ObservableCollection<FolderViewModel> _folderItems = new ObservableCollection<FolderViewModel>();
@@ -59,18 +85,37 @@ namespace PopMail.ViewModels
             try
             {
                 LoadingData = true;
+
+                var accountsList = new ObservableCollection<AccountViewModel>();
+                {
+                    var db = Database.DbConnection;
+                    var result = await db.QueryAsync<AccountViewModel>("select Id, Name from EmailProvider");
+                    AccountsList = new ObservableCollection<AccountViewModel>();
+                    foreach (var accountViewModel in result)
+                    {
+                        AccountsList.Add(accountViewModel);
+                    }
+                }
+
                 FolderTree = new FolderTreeViewModel();
                 await FolderTree.Refresh();
                 FolderItems = FolderTree.Children;
 
                 if (FolderItems.Count == 0)
                 {
-                    _navigationService.Navigate("EmailProvider",null);
+                    _navigationService.Navigate("EmailProvider", null);
+                    return;
                 }
+
+                var currentAccount = await SettingsMethods.GetSetting("default account") ??
+                                     await SettingsMethods.GetSetting("last used account") ??
+                                     "0";
+
+                SelectedAccountIndex = Convert.ToInt32(currentAccount);
             }
             catch (Exception ex)
             {
-                    errorMessage = string.Format(CultureInfo.CurrentCulture,
+                errorMessage = string.Format(CultureInfo.CurrentCulture,
                     "GeneralServiceErrorMessage",
                     Environment.NewLine,
                     ex.Message);
@@ -79,14 +124,8 @@ namespace PopMail.ViewModels
             {
                 LoadingData = false;
             }
-
-            //if (!string.IsNullOrWhiteSpace(errorMessage))
-            //{
-            //    await _alertMessageService.ShowAsync(errorMessage, _resourceLoader.GetString("ErrorServiceUnreachable"));
-            //    return;
-            //}
         }
-        // Use the ViewModel to store the SelectedIndex of the FlipView so that the value can be set
+
         #region Commands
         private DelegateCommand<ItemClickEventArgs> _providerProperties;
 

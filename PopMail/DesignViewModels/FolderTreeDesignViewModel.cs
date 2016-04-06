@@ -1,47 +1,33 @@
-﻿using Prism.Windows.Mvvm;
-using PopMail.DataAcces;
-using Popmail.UILogic.Models;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using WinRTXamlToolkit.Controls.Extensions;
-using Windows.Foundation;
-using Windows.System;
-using Windows.UI.Core;
 using Windows.UI.Xaml;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
+using Prism.Windows.Mvvm;
 
-namespace Popmail.UILogic.ViewModels
+namespace PopMail.DesignViewModels
 {
-    public class FolderTreeViewModel : ViewModelBase
+    public class FolderTreeDesignViewModel : ViewModelBase
     {
-
         #region RootElements
 
-        private ObservableCollection<FolderViewModel> _children = new ObservableCollection<FolderViewModel>();
+        private ObservableCollection<FolderDesignViewModel> _children = new ObservableCollection<FolderDesignViewModel>();
 
         /// <summary>
         /// Gets or sets the root elements in the visual tree.
         /// </summary>
-        public ObservableCollection<FolderViewModel> Children
+        public ObservableCollection<FolderDesignViewModel> Children
         {
             get { return _children; }
-            set { this.SetProperty(ref _children, value); }
+            set { _children = value;  }
         }
 
         #endregion
 
         #region SelectedItem
 
-        private FolderViewModel _selectedItem;
+        private FolderDesignViewModel _selectedItem;
 
-        public FolderViewModel SelectedItem
+        public FolderDesignViewModel SelectedItem
         {
             get { return _selectedItem; }
             set
@@ -91,9 +77,9 @@ namespace Popmail.UILogic.ViewModels
 
         #region SelectItem()
 
-        internal async Task<bool> SelectItem(FolderViewModel element, bool refreshOnFail = false)
+        internal async Task<bool> SelectItem(FolderDesignViewModel element, bool refreshOnFail = false)
         {
-            var ancestors = new List<FolderViewModel>();
+            var ancestors = new List<FolderDesignViewModel>();
             var current = element;
             while (current.Parent != null)
             {
@@ -112,25 +98,5 @@ namespace Popmail.UILogic.ViewModels
         }
 
         #endregion
-
-        internal async Task Refresh()
-        {
-            //if (this.SelectedItem != null)
-            //{
-            //    await this.SelectedItem.Refresh();
-            //}
-            //else 
-            //if (this.RootElements.Count == 1 &&
-            //    this.RootElements[0] is DependencyObjectViewModel &&
-            //    ((DependencyObjectViewModel)this.RootElements[0]).Model == Window.Current.Content)
-            //{
-            //    await this.RootElements[0].RefreshAsync();
-            //}
-            //else
-            //{
-            this.Children.Clear();
-            await FolderViewModel.GetRootItems(this);
-            //}
-        }
     }
 }

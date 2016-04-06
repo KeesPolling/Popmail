@@ -1,7 +1,7 @@
 ﻿using Prism.Commands;
 using Prism.Windows.AppModel;
 using Prism.Windows.Mvvm;
-using PopMail.Models;
+using Popmail.UILogic.Models;
 using PopMail.DataAcces;
 using System;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ using System.Windows.Input;
 using Windows.UI.Xaml.Navigation;
 using Prism.Windows.Navigation;
 
-namespace PopMail.ViewModels
+namespace Popmail.UILogic.ViewModels
 {
     public class EmailProviderPageViewModel : ViewModelBase
     {
