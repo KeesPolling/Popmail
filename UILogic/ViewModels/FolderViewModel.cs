@@ -1,56 +1,49 @@
 ﻿
 using Prism.Windows.Mvvm;
-using PopMail.DataAcces;
 using Popmail.UILogic.Models;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
-using Windows.UI.Notifications;
-using SQLite.Net.Interop;
+using Popmail.UILogic.DataAcces;
 
 namespace Popmail.UILogic.ViewModels
 {
     public class FolderViewModel: ViewModelBase
     {
         private FolderTreeViewModel _visualTree;
-        private Folder _folder;
+        private Folders _folder;
         private FolderViewModel _parent;
-        private string _path;
         private ObservableCollection<FolderViewModel> _children =  new ObservableCollection<FolderViewModel>();
         public static async Task GetRootItems(FolderTreeViewModel folderTree)
         {
             Debug.Assert(folderTree != null);
             var db = Database.DbConnection;
-            var rootFolders = await db.Table<Folder>().Where(f => f.Parent == 0).ToListAsync();
-            var firstFolder = rootFolders.First();
+            var rootFolders = await db.Table<Folders>().Where(f => f.Parent == 0).ToListAsync();
             //  Skip single rootfolders, unless it does not have children
             while (rootFolders.Count == 1)
             {
-                var id = firstFolder.Id;
-                var children = await db.Table<Folder>().Where(f => f.Parent == id).ToListAsync();
+                var rootId = rootFolders.First().Id;
+                var children = await db.Table<Folders>().Where(f => f.Parent == rootId).ToListAsync();
                 if (children.Count == 0) break;
                 rootFolders = children;
-                firstFolder = rootFolders.First();
             }
             var root = new ObservableCollection<FolderViewModel>();
-            foreach (Folder folder in rootFolders)
+            foreach (Folders folder in rootFolders)
             {
                 var folderViewModel = new FolderViewModel(folder,null,folderTree);
-                await folderViewModel.ReadChildrenFromDb(folderTree);
+                await folderViewModel.ReadChildrenFromDb();
                 root.Add(folderViewModel);
             }
             folderTree.Children = root;
         }
         #region private Constructors
-        internal FolderViewModel(Folder myFolder, FolderViewModel myParent, FolderTreeViewModel visualTree )
+        internal FolderViewModel(Folders myFolder, FolderViewModel myParent, FolderTreeViewModel visualTree )
         {
             this._folder = myFolder;
             _visualTree = visualTree;
-            Parent = myParent;
+            _parent = myParent;
         }
         #endregion
 
@@ -63,7 +56,7 @@ namespace Popmail.UILogic.ViewModels
             if (this.Parent == null) //rootfolder..
                 return  CheckChildren(new List<int>());
             if (ids.Contains(Parent.Id)) return false;
-            var checkedOk = CheckParent(ids);
+            var checkedOk = Parent.CheckParent(ids);
             return checkedOk;
         }
 
@@ -89,19 +82,46 @@ namespace Popmail.UILogic.ViewModels
         // }
         #endregion
         #region ReadChildren
-        private async Task ReadChildrenFromDb(FolderTreeViewModel folderTree)
+        private async Task ReadChildrenFromDb()
         {
-            var tree = _visualTree.Children;
             var db = Database.DbConnection;
-            var children = await db.Table<Folder>().Where(f => f.Parent == this._folder.Id).ToListAsync();
+            var children = await db.Table<Folders>().Where(f => f.Parent == this._folder.Id).ToListAsync();
 
-            foreach (Folder childfolder in children)
+            foreach (Folders childfolder in children)
             {
                 var child = new FolderViewModel(childfolder, this, _visualTree);
-                await AddChild(child);
-                await child.ReadChildrenFromDb(folderTree);
+                _children.Add(child);
+                await child.ReadChildrenFromDb();
             }
-            _visualTree.Children = tree;
+        }
+        #endregion
+        #region Expand
+
+        public bool Expand(int id, bool select)
+        {
+            if (_folder.Id == id)
+            {
+                if(!select) Expand();
+                if (select) IsSelected = true;
+                return true;
+            }
+            foreach (var child in Children)
+            {
+                if (child.Expand(id, select))
+                {
+                    Expand();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void Expand()
+        {
+            if (!IsExpanded)
+            {
+                IsExpanded = true;
+            }
         }
         #endregion
 
@@ -113,7 +133,7 @@ namespace Popmail.UILogic.ViewModels
             if (!checkedOk) return false;
 
             var db = Database.DbConnection;
-            if (this.Parent != null)
+            if ((_parent != null) && (_parent.Id == 0))
             {
                 children.Add(this.Id);
                 if (await this.Parent.Save(children))
@@ -133,45 +153,48 @@ namespace Popmail.UILogic.ViewModels
             {
                 i = await db.UpdateAsync(_folder);
             }
-            // a folder with no parent should be added to the FolderTree.Children
-            // single folders in a root are not visible if it has children (see this.GetRootItems)
-            // a new rootfolder should be added to the invisible rootfolder.
-            if (Parent == null)
+            if (_parent == null)
             {
-                if (_visualTree.Children == null) _visualTree.Children = new ObservableCollection<FolderViewModel>();
-                if (_visualTree.Children.Count == 0)
-                {
-                    _visualTree.Children.Add(this);
-                }
-                else
-                {
-                    _folder.Parent = _visualTree.Children[0]._folder.Parent;
-                }
+                _visualTree?.Children?.Add(this);
             }
             return (i == 1);
         }
-        private async Task SetParent(FolderViewModel parent)
+        public async Task<bool> SetParent(FolderViewModel parent)
         {
-            if (_parent == parent) return;
+            if (_parent == parent) return true;
             if (_parent != null)
             {
                 await _parent.RemoveChild(this);
             }
-            if (_parent != null)
+            _parent = parent;
+            if (parent == null)
             {
-                if (parent.Id == 0)
+                if (_visualTree?.Children?[0] == null)
                 {
-                    await parent.Save();
+                    _folder.Parent = 0;
                 }
-                if (_folder.Parent != Parent.Id)
+                else
                 {
-                    _folder.Parent = Parent.Id;
-                    await this.Save();
-                    _parent.OnPropertyChanged("Children");
+                    _folder.Parent = _visualTree.Children[0]._parent.Id;
                 }
+                _parent = null;
+                await Save(new List<int>());
             }
-            _path = await this.GetPath();
+            else
+            {
+                if (parent.Id == 0) await parent.Save();
+                _folder.Parent = parent.Id;
+                var saved = await Save(new List<int>());
+                if (!saved)
+                {
+                    _folder.Parent = 0;
+                    _parent = null;
+                    return false;
+                }
+                _parent?.OnPropertyChanged("Children");
+            }
             OnPropertyChanged("Path");
+            return true;
         }
         internal int Id
         {
@@ -179,11 +202,11 @@ namespace Popmail.UILogic.ViewModels
         }
 
         #region publicConstructors
-        public FolderViewModel(string name, FolderTreeViewModel folderTreeTree)
+        public FolderViewModel(string name, FolderTreeViewModel folderTree)
         {
-            _folder = new Folder();
+            _folder = new Folders();
             Name = name;
-            _visualTree = folderTreeTree;
+            _visualTree = folderTree;
         }
         #endregion
         #region publicProperties
@@ -205,25 +228,12 @@ namespace Popmail.UILogic.ViewModels
                 }
             }
         }
-        public FolderViewModel Parent
-        {
-            get
-            {
-                return this._parent;
-            }
-            private set 
-            { 
-                SetParent(value);
-            }
-        }
-        public string Path
-        {
-            get
-            {
-                return _path;
-            }
-        }
-#   region IsSelected
+
+        public FolderViewModel Parent => _parent;
+
+        public string Path => GetPath();
+        
+        #region IsSelected
         public bool IsSelected
         {
             get { return _isSelected; }
@@ -280,7 +290,7 @@ namespace Popmail.UILogic.ViewModels
             var a = await this.AddChild(child);
             return child;
         }
-        public async Task<string> GetPath()
+        private string GetPath()
         {
             if (this._parent == null)
             {
@@ -288,14 +298,14 @@ namespace Popmail.UILogic.ViewModels
             }
             else
             {
-                var concatPath = await _parent.GetPath();
+                var concatPath = _parent.GetPath();
                 concatPath = string.Concat(concatPath, "\\", Name);
                 return concatPath;
             }
         }
         public async Task<bool> AddChild(FolderViewModel Child)
         {
-            if (this.CheckParent(new List<int>()))
+            if (Child.Parent == this) return true; // do nothing
             {
                 var hasParent = false;
                 if (Child.Parent != null)
@@ -304,9 +314,10 @@ namespace Popmail.UILogic.ViewModels
                 }
                 if (!hasParent)
                 {
-                    Child.Parent = this;
+                    hasParent = await Child.SetParent(this);
+                    if (!hasParent) return false;
                     this._children.Add(Child);
-                    this.OnPropertyChanged("Children");
+                    OnPropertyChanged("Children");
                     return true;
                 }
             }
@@ -314,7 +325,7 @@ namespace Popmail.UILogic.ViewModels
         }
         public async Task<bool> RemoveChild(FolderViewModel Child)
         {
-            Child.Parent = null;
+            Child._parent = null;
             await Child.Save();
             if (this._children.Remove(Child))
             {

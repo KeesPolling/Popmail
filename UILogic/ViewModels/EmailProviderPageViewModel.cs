@@ -2,51 +2,50 @@
 using Prism.Windows.AppModel;
 using Prism.Windows.Mvvm;
 using Popmail.UILogic.Models;
-using PopMail.DataAcces;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Windows.UI.Xaml.Navigation;
+using Popmail.UILogic.DataAcces;
 using Prism.Windows.Navigation;
 
 namespace Popmail.UILogic.ViewModels
 {
     public class EmailProviderPageViewModel : ViewModelBase
     {
-        private EmailProvider _emailProvider;
+
+        private Accounts _emailProvider;
         private Task _createFolder;
         private bool _hasChanges;
         private INavigationService _navigationService;
-        private DelegateCommand _backCommand; 
+        private DelegateCommand _backCommand;
+        private FolderTreeViewModel _folderTree;
+
         private bool FolderIdExists(int folderId)
         {
             var db = Database.DbConnection;
-            var folder = db.FindAsync<Folder>(f => f.Id == folderId).Result;
+            var folder = db.FindAsync<Folders>(f => f.Id == folderId).Result;
             return (folder != null);
         }
 
         private async Task AddAllFolders(string rootName)
         {
-            var rootFolder = new FolderViewModel(rootName, null);
+            var rootFolder = new FolderViewModel(rootName, _folderTree);
             await rootFolder.Save();
             var infolder = await rootFolder.AddChild("In");
-            await infolder.Save();
             this._emailProvider.InFolderId= infolder.Id;
             var outFolder = await rootFolder.AddChild("Out");
-            await outFolder.Save();
             this._emailProvider.OutFolderId= outFolder.Id;
             var sentFolder = await rootFolder.AddChild("Sent");
-            await sentFolder.Save();
             this._emailProvider.SentFolderId = sentFolder.Id;
             var conceptsFolder = await rootFolder.AddChild("Concepts");
-            await conceptsFolder.Save();
             this._emailProvider.ConceptsFolderId = conceptsFolder.Id;
     }
         public EmailProviderPageViewModel(INavigationService navigationService)
         {
-            _emailProvider = new EmailProvider();
+            _emailProvider = new Accounts();
             _hasChanges = false;
             _navigationService = navigationService;
             SaveCommand = DelegateCommand.FromAsyncHandler(Save ,() => this.ReadyForSave());
@@ -56,25 +55,27 @@ namespace Popmail.UILogic.ViewModels
         {
             string errorMessage = string.Empty;
             try
-            {
+           {
                 LoadingData = true;
+                var parameter = (AccountPageParameters)e.Parameter;
                 if (e.NavigationMode == NavigationMode.New)
                 {
-                    if (e.Parameter == null)
+                    if ((parameter != null) && (parameter.Account != 0))
                     {
-                        _emailProvider = new EmailProvider();
+                        _emailProvider = new Accounts();
                     }
                     else
                     {
                         var db = Database.DbConnection;
-                       _emailProvider = await db.FindAsync<EmailProvider>(f => f.Id == (int) e.Parameter);
+                       _emailProvider = await db.FindAsync<Accounts>(f => f.Id == parameter.Account);
                         if (_emailProvider == null)
                         {
-                            _emailProvider = new EmailProvider();
+                            _emailProvider = new Accounts();
                         } 
                     }
                 }
-            }
+               _folderTree = parameter?.FolderTree;
+           }
             catch (Exception ex)
             {
                 errorMessage = string.Format(CultureInfo.CurrentCulture,
@@ -284,6 +285,13 @@ namespace Popmail.UILogic.ViewModels
                         var i = await db.UpdateAsync(this._emailProvider);
                     }
                     HasChanges = false;
+                    if (_navigationService != null) //unittest!
+                    {
+                        if (_navigationService.CanGoBack())
+                        {
+                            _navigationService.GoBack();
+                        }
+                    }
                 }
             } 
         }

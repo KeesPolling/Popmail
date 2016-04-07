@@ -1,6 +1,5 @@
 ﻿
 using Prism.Windows.Mvvm;
-using PopMail.DataAcces;
 using Popmail.UILogic.Models;
 using System;
 using System.Collections.Generic;
@@ -17,13 +16,13 @@ namespace PopMail.DesignViewModels
     public class FolderDesignViewModel: ViewModelBase
     {
         private FolderTreeDesignViewModel _visualTree;
-        private Folder _folder;
+        private Folders _folder;
         private FolderDesignViewModel _parent;
         private string _path;
         private ObservableCollection<FolderDesignViewModel> _children =  new ObservableCollection<FolderDesignViewModel>();
 
         #region private Constructors
-        internal FolderDesignViewModel(Folder myFolder, FolderDesignViewModel myParent, FolderTreeDesignViewModel visualTree )
+        internal FolderDesignViewModel(Folders myFolder, FolderDesignViewModel myParent, FolderTreeDesignViewModel visualTree )
         {
             this._folder = myFolder;
             _visualTree = visualTree;
@@ -40,7 +39,7 @@ namespace PopMail.DesignViewModels
         #region publicConstructors
         public FolderDesignViewModel(string name, FolderTreeDesignViewModel folderTree)
         {
-            _folder = new Folder();
+            _folder = new Folders();
             Name = name;
             _visualTree = folderTree;
         }

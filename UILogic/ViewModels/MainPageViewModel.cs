@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Navigation;
-using PopMail.DataAcces;
-using Popmail.UILogic.ViewModels;
+using Popmail.UILogic.DataAcces;
+using Popmail.UILogic.Models;
 using Prism.Commands;
-using Prism.Windows.AppModel;
 using Prism.Windows.Mvvm;
 using Prism.Windows.Navigation;
 
@@ -20,7 +18,7 @@ namespace Popmail.UILogic.ViewModels
         public MainPageViewModel(INavigationService navigationService)
         {
           _navigationService = navigationService;
-          _providerProperties = new DelegateCommand<ItemClickEventArgs>(providerProperies);
+          _providerProperties = new DelegateCommand<ItemClickEventArgs>(ProviderProperties);
         }
         #region AccountsList
 
@@ -38,7 +36,6 @@ namespace Popmail.UILogic.ViewModels
         }
 
         private int _selectedAccountIndex;
-        [RestorableState]
         public int SelectedAccountIndex
         {
             get { return _selectedAccountIndex; }
@@ -85,11 +82,11 @@ namespace Popmail.UILogic.ViewModels
             try
             {
                 LoadingData = true;
+                var db = Database.DbConnection;
 
                 var accountsList = new ObservableCollection<AccountViewModel>();
                 {
-                    var db = Database.DbConnection;
-                    var result = await db.QueryAsync<AccountViewModel>("select Id, Name from EmailProvider");
+                    var result = await db.QueryAsync<AccountViewModel>("select Id, Name from Accounts");
                     AccountsList = new ObservableCollection<AccountViewModel>();
                     foreach (var accountViewModel in result)
                     {
@@ -103,7 +100,7 @@ namespace Popmail.UILogic.ViewModels
 
                 if (FolderItems.Count == 0)
                 {
-                    _navigationService.Navigate("EmailProvider", null);
+                    _navigationService.Navigate("EmailProvider",new AccountPageParameters() {FolderTree = _folderTree});
                     return;
                 }
 
@@ -112,6 +109,11 @@ namespace Popmail.UILogic.ViewModels
                                      "0";
 
                 SelectedAccountIndex = Convert.ToInt32(currentAccount);
+                var account = await db.FindAsync<Accounts>(AccountsList[SelectedAccountIndex].Id);
+                foreach (var folder in FolderItems)
+                {
+                    if (folder.Expand(account.InFolderId, true)) break;
+                }
             }
             catch (Exception ex)
             {
@@ -136,9 +138,10 @@ namespace Popmail.UILogic.ViewModels
                 return _providerProperties;
             }
         }
-        private void providerProperies(ItemClickEventArgs args)
+        private void ProviderProperties(ItemClickEventArgs args)
         {
-            _navigationService.Navigate("EmailProvider", null);
+            _navigationService.Navigate("EmailProvider",
+                new AccountPageParameters() { Account = 0, FolderTree = _folderTree });
         }
         #endregion
     }

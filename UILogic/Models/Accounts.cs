@@ -4,7 +4,7 @@ using SQLiteNetExtensions.Attributes;
 
 namespace Popmail.UILogic.Models
 {
-    public class EmailProvider
+    public class Accounts
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
@@ -22,16 +22,16 @@ namespace Popmail.UILogic.Models
         
         public string Password { get; set; }
 
-        [NotNull, ForeignKey(typeof(Folder))]     // Specify the foreign key
+        [NotNull, ForeignKey(typeof(Folders))]     // Specify the foreign key
         public int InFolderId { get; set; }
 
-        [NotNull, ForeignKey(typeof(Folder))]     // Specify the foreign key
+        [NotNull, ForeignKey(typeof(Folders))]     // Specify the foreign key
         public int OutFolderId { get; set; }
 
-        [NotNull, ForeignKey(typeof(Folder))]     // Specify the foreign key
+        [NotNull, ForeignKey(typeof(Folders))]     // Specify the foreign key
         public int SentFolderId { get; set; }
 
-        [NotNull, ForeignKey(typeof(Folder))]     // Specify the foreign key
+        [NotNull, ForeignKey(typeof(Folders))]     // Specify the foreign key
         public int ConceptsFolderId { get; set; }
 
     }

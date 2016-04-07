@@ -1,15 +1,15 @@
-﻿using Popmail.UILogic.Models;
-using SQLite.Net;
-using SQLite.Net.Async;
-using System;
+﻿using System;
 using System.IO;
 using Windows.Storage;
+using Popmail.UILogic.Models;
+using SQLite.Net;
+using SQLite.Net.Async;
 
-namespace PopMail.DataAcces
+namespace Popmail.UILogic.DataAcces
 {
     public static class Database
     {
-        private static SQLiteAsyncConnection dbConnection;
+        private static SQLiteAsyncConnection _dbConnection;
 
         private static SQLiteAsyncConnection CreateDatabaseAsync()
         {
@@ -17,31 +17,31 @@ namespace PopMail.DataAcces
 
             try
             {
-                var Platform = new SQLite.Net.Platform.WinRT.SQLitePlatformWinRT();
-                var DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path,"Storage.SQLite");
-                var ConnectionString = new SQLiteConnectionString(DbPath, true);
-                var dbLockedCon = new SQLiteConnectionWithLock(Platform ,ConnectionString);
+                var platform = new SQLite.Net.Platform.WinRT.SQLitePlatformWinRT();
+                var dbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path,"Storage.SQLite");
+                var connectionString = new SQLiteConnectionString(dbPath, true);
+                var dbLockedCon = new SQLiteConnectionWithLock(platform ,connectionString);
             
                 var db = new SQLiteAsyncConnection(() => dbLockedCon);
 
                  //Create the tables that do not exist
-                Type[] Tables = 
+                Type[] tables = 
                 { 
-                       typeof(Folder)
-                     , typeof(EmailProvider)
-                     , typeof(Email)
+                       typeof(Folders)
+                     , typeof(Accounts)
+                     , typeof(Emails)
                      , typeof(EmailFrom)
                      , typeof(EmailSender)
                      , typeof(EmailReplyTo)
                      , typeof(Settings)
                 };
-                var d = db.CreateTablesAsync(Tables).Result;
+                var d = db.CreateTablesAsync(tables).Result;
                 return db;
             }
             catch(Exception e)
             {
                 var mess = e.Message;
-                throw e;
+                throw;
             }
         }
 
@@ -49,18 +49,18 @@ namespace PopMail.DataAcces
         {
             get 
             { 
-                if (dbConnection == null)
+                if (_dbConnection == null)
                 {
                     try
                     {
-                        dbConnection =  CreateDatabaseAsync();
+                        _dbConnection =  CreateDatabaseAsync();
                     }
                     catch (Exception e)
                     {
-                        throw e;
+                        throw;
                     }
                 }
-                return dbConnection; 
+                return _dbConnection; 
             }
         }
     }

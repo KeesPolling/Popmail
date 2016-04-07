@@ -1,6 +1,6 @@
 ﻿using Popmail.UILogic.Models;
-using PopMail.DataAcces;
 using System.Collections.Generic;
+using Popmail.UILogic.DataAcces;
 
 namespace Popmail.UILogic.ViewModels
 {
@@ -11,7 +11,7 @@ namespace Popmail.UILogic.ViewModels
             get
             {
                 var db = Database.DbConnection;
-                var ProviderTable = db.Table<EmailProvider>().ToListAsync().Result;
+                var ProviderTable = db.Table<Accounts>().ToListAsync().Result;
                 var emailProviders = new List<EmailProviderPageViewModel>();
                 foreach (var Provider in ProviderTable)
                 {

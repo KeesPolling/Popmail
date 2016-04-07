@@ -54,12 +54,11 @@
             HorizontalAlignment="Left" 
             Height="768" 
             VerticalAlignment="Bottom"
-            
-        >
-            <!--IsSelectedBindingPath="IsSelected"
-            IsExpandedBindingPath="IsExpanded"-->
+            IsSelectedBindingPath="IsSelected"
+            IsExpandedBindingPath="IsExpanded"
+            >
             <xc:TreeView.ItemTemplate>
-                <DataTemplate>
+                <DataTemplate >
                     <data:DataTemplateExtensions.Hierarchy>
                         <data:HierarchicalDataTemplate ItemsSource="{Binding Children, Mode=TwoWay}" />
                     </data:DataTemplateExtensions.Hierarchy>

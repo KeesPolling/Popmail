@@ -26,7 +26,7 @@ namespace PopMail.UnitTests
             catch (Exception ex)
             {
                 
-                throw ex;
+                throw;
             }
         }
         public async Task<byte> ReadByte()

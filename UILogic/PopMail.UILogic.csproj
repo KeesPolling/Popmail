@@ -109,10 +109,11 @@
   <ItemGroup>
     <Compile Include="DataAcces\Database.cs" />
     <Compile Include="Models\Settings.cs" />
-    <Compile Include="Models\Email.cs" />
-    <Compile Include="Models\EmailProvider.cs" />
-    <Compile Include="Models\Folder.cs" />
+    <Compile Include="Models\Emails.cs" />
+    <Compile Include="Models\Accounts.cs" />
+    <Compile Include="Models\Folders.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ViewModels\AccountPageParameters.cs" />
     <Compile Include="ViewModels\AccountViewModelcs.cs" />
     <Compile Include="ViewModels\SettingsMethods.cs" />
     <Compile Include="ViewModels\EmailProviderList.cs" />

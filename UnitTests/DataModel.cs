@@ -1,10 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using PopMail.DataAcces;
 using Popmail.UILogic.Models;
 using Popmail.UILogic.ViewModels;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Networking;
+using Popmail.UILogic.DataAcces;
 
 namespace PopMail.UnitTests
 {
@@ -29,10 +29,10 @@ namespace PopMail.UnitTests
         public async Task Folder()
         {
             var db = Database.DbConnection;
-            var folder = new Folder();
+            var folder = new Folders();
             folder.Name = "Test";
             var i = await db.InsertAsync(folder);
-            var result = await db.FindAsync<Folder>(f => f.Name == "Test");
+            var result = await db.FindAsync<Folders>(f => f.Name == "Test");
             Assert.IsNotNull(result, "Folder niet aangemaakt");
         }
         [TestMethod]
@@ -52,7 +52,6 @@ namespace PopMail.UnitTests
             var parentFolder = new FolderViewModel("TestParent", tree);
             await parentFolder.Save();
             var testFolder = await parentFolder.AddChild("Test");
-            await testFolder.Save();
             Assert.IsNotNull(testFolder, "Folder niet aangemaakt");
             Assert.IsNotNull(parentFolder, "parentFolder niet aangemaakt");
             Assert.AreEqual<int>(0, testFolder.Children.Count, "Child ten onrechte aangemaakt");
@@ -65,10 +64,9 @@ namespace PopMail.UnitTests
             var testFolder = new FolderViewModel("TestParent", tree);
             await testFolder.Save();
             var testChild = await testFolder.AddChild(testFolder);
-            await testFolder.Save();
             Assert.IsNotNull(testFolder, "Folder niet aangemaakt");
             Assert.IsNull(testFolder.Parent, "Parent recursie!");
-            Assert.AreNotEqual(testFolder.Children.Count, 0, "Child recursie!");
+            Assert.AreEqual(testFolder.Children.Count, 0, "Child recursie!");
         }
         [TestMethod]
         public async Task FolderVMaddChild()

@@ -1,5 +1,4 @@
 ﻿using Prism.Windows.Mvvm;
-using PopMail.DataAcces;
 using Popmail.UILogic.Models;
 using System;
 using System.Collections.Generic;
@@ -47,7 +46,7 @@ namespace Popmail.UILogic.ViewModels
             set
             {
                 SetProperty(ref _selectedItem, value);
-           }
+            }
         }
 
 

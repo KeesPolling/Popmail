@@ -1,17 +1,16 @@
-﻿using SQLite;
-using SQLite.Net.Attributes;
+﻿using SQLite.Net.Attributes;
 using SQLiteNetExtensions.Attributes;
 using System;
 using System.Collections.Generic;
 
 namespace Popmail.UILogic.Models
 {
-    class Email
+    public class Emails
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        [Indexed, ForeignKey(typeof(Folder))]
+        [Indexed, ForeignKey(typeof(Folders))]
         public int FolderId { get; set; }
         [Indexed]
         public DateTime OrigDateTime { get; set; }
@@ -25,45 +24,45 @@ namespace Popmail.UILogic.Models
         public List<EmailReplyTo> ReplyTo { get; set; }
     }
 
-    class EmailFrom
+    public class EmailFrom
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
         
-        [Indexed, ForeignKey(typeof(Email))]
+        [Indexed, ForeignKey(typeof(Emails))]
         public int EmailId { get; set; }
         public string Name { get; set; }
         public string Address { get; set; }
 
         [ManyToOne]
-        public Email Email { get; set; }
+        public Emails Email { get; set; }
     }
 
-    class EmailSender
+    public class EmailSender
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
         
-        [Indexed, ForeignKey(typeof(Email))]
+        [Indexed, ForeignKey(typeof(Emails))]
         public int EmailId{get; set;}
         public string Name{ get; set; }
         public string Address { get; set; }
 
         [ManyToOne]
-        public Email Email {get; set;}
+        public Emails Email {get; set;}
     }
-    class EmailReplyTo
+    public class EmailReplyTo
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
-        [Indexed, ForeignKey(typeof(Email))]
+        [Indexed, ForeignKey(typeof(Emails))]
         public int EmailId { get; set; }
         public string Name { get; set; }
         [NotNull]
         public string Address { get; set; }
 
         [ManyToOne]
-        public Email Email { get; set; }
+        public Emails Email { get; set; }
     }
 }
 
