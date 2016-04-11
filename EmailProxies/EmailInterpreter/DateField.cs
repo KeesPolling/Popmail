@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.Foundation.Metadata;
 using PopMail.EmailProxies.IP_helpers;
 
 namespace PopMail.EmailProxies.EmailInterpreter
@@ -9,6 +11,10 @@ namespace PopMail.EmailProxies.EmailInterpreter
     public class DateField : FieldValue
     {
         private string _stringRepresentation;
+        public override string ToString()
+        {
+            return _stringRepresentation;
+        }
         public DateTime Value { get; private set; }
         public DateField()
         {
@@ -42,13 +48,21 @@ namespace PopMail.EmailProxies.EmailInterpreter
                     case (byte)SpecialByte.LeftParenthesis: // "(": begin comment
                         await ReadComment(reader);
                         break;
+                    case (byte)SpecialByte.Space:
+                        if
+                            (
+                            (valueBuilder.Length == 0) ||
+                            (valueBuilder[valueBuilder.Length - 1] != ' ')
+                            ) valueBuilder.Append(' ');
+                        break;
                     default: // alle andere gevallen
                         valueBuilder.Append(Convert.ToChar(nextByte));
                         break;
                 }
                 if (endType == EndType.None) nextByte = await reader.ReadByte();
             }
-
+            _stringRepresentation = valueBuilder.ToString();
+            Value = Convert.ToDateTime(_stringRepresentation, CultureInfo.InvariantCulture);
             return endType;
         }
     }

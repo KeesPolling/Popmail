@@ -51,8 +51,9 @@ namespace PopMail.EmailProxies.EmailInterpreter
                         endType = await Cc.ReadAddressList(reader);
                         break;
                     case "Date":
-                        endType = await HeaderIgnore.ReadIgnore(reader);
-                    //    ProcessDateTime(Dr);
+                        var dateField = new DateField();
+                        endType = await dateField.ReadDateTime(reader);
+                        OrigDate = dateField.Value;
                         break;
                     case "Message-ID":
                         var ids = new IdentificationField();
