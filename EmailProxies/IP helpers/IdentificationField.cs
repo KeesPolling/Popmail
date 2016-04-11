@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using PopMail.EmailProxies.IP_helpers;
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
@@ -12,44 +13,46 @@ namespace PopMail.EmailProxies.EmailInterpreter
         {
             Identifiers = new List<string>();
         }
-        private async Task<string> ReadOneId(IByteStreamReader Reader)
+        private async Task<string> ReadOneId(IByteStreamReader reader)
         {
             var valueBuilder = new StringBuilder();
-            var nextbyte = await Reader.ReadByte();
-            while (nextbyte != (byte)SpecialByte.RightAngledBracket)
+            var nextByte = await reader.ReadByte();
+            while (nextByte != (byte)SpecialByte.RightAngledBracket)
             {
-                valueBuilder.Append(Convert.ToChar(nextbyte));
-                nextbyte = await Reader.ReadByte();
+                valueBuilder.Append(Convert.ToChar(nextByte));
+                nextByte = await reader.ReadByte();
             }
             return valueBuilder.ToString();
         }
-        internal async Task<byte> ReadIdentifiers(IByteStreamReader Reader)
+        public async Task<EndType> ReadIdentifiers(BufferedByteReader reader)
         {
 
-            var eol = new EOL();
-            var nextByte = await Reader.ReadByte();
+            var eol = new Eol();
+            var nextByte = await reader.ReadByte();
 
-            while (!eol.End)
+            var endType = EndType.None;
+            while ((endType == EndType.None))
             {
                 if (nextByte == (byte)SpecialByte.CarriageReturn)
                 {
-                    nextByte = await eol.ProcessEOL(Reader);
+                    endType = await eol.ProcessEol(reader);
+                    if (endType == EndType.None) nextByte = await reader.ReadByte();
                     continue;
                 }
                 switch (nextByte)
                 {
                     case (byte)SpecialByte.LeftParenthesis: // "(": begin comment
-                        await ReadComment(Reader);
+                        await ReadComment(reader);
                         break;
                     case (byte)SpecialByte.LeftAngledBracket: // "<": begin id
-                        Identifiers.Add(await ReadOneId(Reader));
+                        Identifiers.Add(await ReadOneId(reader));
                         break;
                     default: // alle andere gevallen
                         break;
                 }
-                nextByte = await Reader.ReadByte();
+                nextByte = await reader.ReadByte();
             }
-            return nextByte;
+            return endType;
         }
     }
 }

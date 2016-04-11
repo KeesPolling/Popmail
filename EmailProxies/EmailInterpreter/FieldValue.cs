@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
+using PopMail.EmailProxies.IP_helpers;
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
@@ -21,59 +22,65 @@ namespace PopMail.EmailProxies.EmailInterpreter
             RightAngledBracket = 62, // >
             Backslash = 92 // \
         }
-        internal enum EndType
+        public enum EndType
         {
             None = 0,
             EndOfField,
             EndOfHeader
         }
-        internal class EOLResult
+        internal class QuotedStringResult
         {
-            internal bool End { get; set; }
-            internal byte NextByte { get; set; }
+            internal EndType End { get; set; }
+            internal string QuotedStringValue { get; set; }
         }
-        internal async Task<string> ReadQuotedString(IByteStreamReader Reader)
+        internal async Task<QuotedStringResult> ReadQuotedString(BufferedByteReader reader)
         {
             var valueBuilder = new StringBuilder();
-            var nextByte = await Reader.ReadByte();
-            var eol = new EOL();
-            while (!((eol.End) || (nextByte == (byte)SpecialByte.Quote)))
+            var nextByte = await reader.ReadByte();
+            var eol = new Eol();
+            var endType = EndType.None;
+            while ((endType == EndType.None) && (nextByte != (byte)SpecialByte.Quote))
             {
-                if (nextByte == (byte)SpecialByte.CarriageReturn)
+                switch (nextByte)
                 {
-                    nextByte = await eol.ProcessEOL(Reader);
-                    continue;
+                    case (byte)SpecialByte.CarriageReturn:
+                        endType = await eol.ProcessEol(reader);
+                        break;
+
+                    case (byte)SpecialByte.Backslash:
+                        nextByte = await reader.ReadByte();
+                        valueBuilder.Append(Convert.ToChar(nextByte));
+                        break;
+                    default:
+                        valueBuilder.Append(Convert.ToChar(nextByte));
+                        break;
                 }
-                if (nextByte == (byte)SpecialByte.Backslash)
-                {
-                    nextByte = await Reader.ReadByte();
-                    valueBuilder.Append(Convert.ToChar(nextByte));
-                }
-                else
-                {
-                    valueBuilder.Append(Convert.ToChar(nextByte));
-                }
-                nextByte = await Reader.ReadByte();
+                if (endType == EndType.None) nextByte = await reader.ReadByte();
             }
-            return valueBuilder.ToString();
+            var thisResult = new QuotedStringResult()
+            {
+                End = endType,
+                QuotedStringValue = valueBuilder.ToString()
+            };
+            return thisResult;
         }
-        internal async Task ReadComment(IByteStreamReader Reader)
+        internal async Task ReadComment(IByteStreamReader reader)
         {
-            var nextByte = await Reader.ReadByte();
+            var nextByte = await reader.ReadByte();
             while (nextByte != (byte)SpecialByte.RightParernthesis)
             {
                 if (nextByte == (byte)SpecialByte.Backslash)
                 {
-                    nextByte = await Reader.ReadByte();
+                    nextByte = await reader.ReadByte();
                 }
                 else
                 {
                     if (nextByte == (byte)SpecialByte.LeftParenthesis)
                     {
-                        await ReadComment(Reader);
+                        await ReadComment(reader);
                     }
                 }
-                nextByte = await Reader.ReadByte();
+                nextByte = await reader.ReadByte();
             }
         }
     }

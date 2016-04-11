@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Data.Xml.Dom;
@@ -8,7 +7,7 @@ using Windows.Networking.Sockets;
 using Windows.Storage;
 using Windows.Storage.Streams;
 
-namespace PopMail.EmailProxies
+namespace PopMail.EmailProxies.IP_helpers
 {
     /// <summary>
     /// This class is used for sending a request and receiving a response
@@ -17,21 +16,18 @@ namespace PopMail.EmailProxies
     /// </summary>
     public class IpDialog: IByteStreamReader, IDisposable 
     {
-        bool _disposed;
-        uint _minBufferSize;
-        uint _maxBufferSize;
+        private bool _disposed;
+        private uint _minBufferSize;
+        private uint _maxBufferSize;
   //      uint _buffersize;
-        StreamSocket _streamSocket;
-        DataReader _dataReader;
-        DataWriter _dataWriter;
+        private StreamSocket _streamSocket;
+        private DataReader _dataReader;
+        private DataWriter _dataWriter;
 //        StreamWriter _memWriter;
-        internal DataReader Reader
-        {
-            get
-            {
-                return _dataReader;
-            }
-        }
+
+        internal DataReader Reader => _dataReader;
+            
+   
         private async Task SendRequest(string Request)
         {
             _dataWriter.WriteString(Request);
@@ -54,10 +50,10 @@ namespace PopMail.EmailProxies
         /// <summary>
         /// Connects to a Pop3 server
         /// </summary>
-        /// <param name="TargetAddres">Ip adress of the server</param>
-        /// <param name="PortName">Port adress of the service</param>
+        /// <param name="targetAddres">Ip adress of the server</param>
+        /// <param name="portName">Port adress of the service</param>
         /// <returns>Welcome text from the service upon establishing a connection</returns>
-        public async Task<string> Start(HostName TargetAddres, string PortName)
+        public async Task<string> Start(HostName targetAddres, string portName)
         {
             var received = "";
             try
@@ -68,7 +64,7 @@ namespace PopMail.EmailProxies
                     await LoadConfiguredValues();
                 }
 
-                await _streamSocket.ConnectAsync(TargetAddres, PortName);
+                await _streamSocket.ConnectAsync(targetAddres, portName);
 
                 var count = await _dataReader.LoadAsync(_minBufferSize);
                 if (count > 0)
@@ -107,10 +103,10 @@ namespace PopMail.EmailProxies
         {
             try
             {
-                var FileName = new Uri(String.Format("ms-appx:///Assets/Configuration/{0}", "All.xml"));
+                var fileName = new Uri(String.Format("ms-appx:///Assets/Configuration/{0}", "All.xml"));
                 StorageFile file = await StorageFile.GetFileFromApplicationUriAsync
                 (
-                    FileName    
+                    fileName    
                 );
                 XmlDocument xmlConfiguration = await XmlDocument.LoadFromFileAsync(file);
 
@@ -119,14 +115,14 @@ namespace PopMail.EmailProxies
                 (
                     "./appSettings/add[@key='minBufferSize']/@value"
                 );
-                _minBufferSize = (node == null) ? (uint)1023 : (uint)node.NodeValue;
+                _minBufferSize =  Convert.ToUInt32(node?.NodeValue ?? "1023");
 
                 // Set _maxbuffersize
                 node = xmlConfiguration.DocumentElement.SelectSingleNode
                     (
                         "./appSettings/add[@key='maxBufferSize']/@value"
                     );
-                _maxBufferSize = (node == null) ? (uint)64001 : (uint)node.NodeValue;
+                _maxBufferSize = Convert.ToUInt32(node?.NodeValue ?? "64001"); 
             }
             catch (System.IO.FileNotFoundException) 
             {
@@ -138,15 +134,15 @@ namespace PopMail.EmailProxies
         /// <summary>
         /// Sends a request to the service
         /// </summary>
-        /// <param name="Request">a valid request</param>
+        /// <param name="request">a valid request</param>
         /// <returns>the response from the server</returns>
-        public async Task<string> GetSingleLineResponse(string Request)
+        public async Task<string> GetSingleLineResponse(string request)
         {
             var received = new StringBuilder();
             var bufferSize = _minBufferSize;
             try
             {
-                await SendRequest(Request);
+                await SendRequest(request);
                 var count = await _dataReader.LoadAsync(bufferSize);
                 received.Append(_dataReader.ReadString(count));
                 return received.ToString();
@@ -160,15 +156,15 @@ namespace PopMail.EmailProxies
         /// <summary>
         /// Sends a request to the service
         /// </summary>
-        /// <param name="Request">a valid request</param>
+        /// <param name="request">a valid request</param>
         /// <returns>the response from the server</returns>
-        public async Task<string> GetMultiLineResponse(string Request)
+        public async Task<string> GetMultiLineResponse(string request)
         {
             var received = new StringBuilder();
             var bufferSize = _minBufferSize;
             try
             {
-                await SendRequest(Request);
+                await SendRequest(request);
                 var count = await _dataReader.LoadAsync(bufferSize);
                 received.Append(_dataReader.ReadString(count));
                 while (!received.ToString().EndsWith("\r\n.\r\n", StringComparison.Ordinal))
@@ -191,15 +187,15 @@ namespace PopMail.EmailProxies
         }        /// <summary>
         /// Sends a request to the service
         /// </summary>
-        /// <param name="Request">a valid request</param>
+        /// <param name="request">a valid request</param>
         /// <returns>the response from the server</returns>
-        public async Task<DataReader> GetStream(string Request)
+        public async Task<DataReader> GetStream(string request)
         {
-            var _bufferSize = _minBufferSize;
+            var bufferSize = _minBufferSize;
             try
             {
-                await SendRequest(Request);
-                var count = await _dataReader.LoadAsync(_bufferSize);
+                await SendRequest(request);
+                var count = await _dataReader.LoadAsync(bufferSize);
                 return _dataReader;
             }
             catch (Exception)
@@ -235,19 +231,10 @@ namespace PopMail.EmailProxies
             if (_disposed) return;
             if (disposing)
             {
-                if (_dataReader != null)
-                {
-                     _dataReader.Dispose();
-                }
-                if (_dataWriter != null)
-                {
-                    _dataWriter.Dispose();
-                }
-                if (_streamSocket != null)
-                {
-                    _streamSocket.Dispose();
-                }
                 _disposed = true;
+                _dataReader?.Dispose();
+                _dataWriter?.Dispose();
+                _streamSocket?.Dispose();
             }
         }
     }

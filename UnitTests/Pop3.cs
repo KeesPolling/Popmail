@@ -4,6 +4,7 @@ using PopMail.EmailProxies;
 using System;
 using System.Threading.Tasks;
 using Windows.Storage;
+using PopMail.EmailProxies;
 using PopMail.EmailProxies.EmailInterpreter;
 
 namespace PopMail.UnitTests
@@ -37,7 +38,7 @@ namespace PopMail.UnitTests
         public async Task ReadHeaderCommentsFWS()
         {
             var FileName = "TestCFWSP.txt";
-            var reader = new FileByteReader();
+            var reader = new BufferedByteReader(new FileByteReader());
             await reader.GetStream(FileName);
             var header = new Header();
             await header.ReadHeader(reader);
@@ -50,7 +51,7 @@ namespace PopMail.UnitTests
         public async Task ReadMessageIDs()
         {
             var FileName = "testReferences.txt";
-            var reader = new FileByteReader();
+            var reader = new BufferedByteReader(new FileByteReader());
             await reader.GetStream(FileName);
             var header = new Header();
             await header.ReadHeader(reader);

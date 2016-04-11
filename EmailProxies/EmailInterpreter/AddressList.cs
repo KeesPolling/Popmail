@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using PopMail.EmailProxies;
+using PopMail.EmailProxies.IP_helpers;
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
@@ -30,64 +32,63 @@ namespace PopMail.EmailProxies.EmailInterpreter
             this.Adresses = new List<Adress>();
         }
 
-        private void AddressAdd(List<AddressList.Adress> List, AddressList.Adress Address, StringBuilder Value)
+        private void AddressAdd(List<AddressList.Adress> list, AddressList.Adress address, StringBuilder builderValue)
         {
-            var value = Value.ToString().Trim();
-            if (String.IsNullOrEmpty(Address.MailBox))
+            var value = builderValue.ToString().Trim();
+            if (String.IsNullOrEmpty(address.MailBox))
             {
-                Address.MailBox = value;
+                address.MailBox = value;
             }
             else
             {
-                if (String.IsNullOrEmpty(Address.Name))
+                if (String.IsNullOrEmpty(address.Name))
                 {
-                    Address.Name = value;
+                    address.Name = value;
                 }
                 else
                 {
-                    Address.Name = Address.Name + value;
+                    address.Name = address.Name + value;
                 }
             }
-            if (!String.IsNullOrEmpty(Address.MailBox))
+            if (!String.IsNullOrEmpty(address.MailBox))
             { 
-                List.Add(Address);
+                list.Add(address);
             }
         }
-        private void GroupAdd(AddressList.Group Group, AddressList.Adress Address, StringBuilder Value)
+        private void GroupAdd(AddressList.Group group, AddressList.Adress address, StringBuilder builderValue)
         {
             // is also an end of address-spec
-            AddressAdd(Group.Members, Address, Value);
-            this.Groups.Add(Group);
+            AddressAdd(group.Members, address, builderValue);
+            this.Groups.Add(group);
         }
 
-        internal async Task<byte> ReadAddressList(IByteStreamReader Reader)
+        internal async Task<EndType> ReadAddressList(BufferedByteReader reader)
         {
             var valueBuilder = new StringBuilder();
 
-            var eol = new EOL();
-            var nextByte = await Reader.ReadByte();
+            var eol = new Eol();
+            var nextByte = await reader.ReadByte();
 
             var address = new AddressList.Adress();
             Group group = new Group();
-            while (!eol.End)
+            var endType = EndType.None;
+            while ((endType == EndType.None))
             {
-                if (nextByte == (byte)SpecialByte.CarriageReturn)
-                {
-                    nextByte = await eol.ProcessEOL(Reader);
-                    continue;
-                }
                 switch (nextByte)
                 {
+                    case (byte)SpecialByte.CarriageReturn:
+                        endType = await eol.ProcessEol(reader);
+                        break;
                     case (byte)SpecialByte.LeftParenthesis: // "(": begin comment
-                        await ReadComment(Reader);
+                        await ReadComment(reader);
                         break;
                     case (byte)SpecialByte.Backslash: // "\": begin "quoted character"
-                        nextByte = await Reader.ReadByte();
+                        nextByte = await reader.ReadByte();
                         valueBuilder.Append(Convert.ToChar(nextByte));
                         break;
                     case (byte)SpecialByte.Quote: //  """: begin quoted string
                         // TODO quotedString ;
-                        valueBuilder.Append(await ReadQuotedString(Reader));
+                        valueBuilder.Append(await ReadQuotedString(reader));
                         break;
                     case (byte)SpecialByte.Colon: // ":": = end of group name
                         group.Name = valueBuilder.ToString().Trim();
@@ -121,7 +122,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
                         valueBuilder.Append(Convert.ToChar(nextByte));
                         break;
                 }
-                nextByte = await Reader.ReadByte();
+                if (endType == EndType.None) nextByte = await reader.ReadByte();
             }
             if (group.Name == null)
             {
@@ -131,7 +132,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
             {
                 GroupAdd(group, address, valueBuilder);
             }
-            return nextByte;
+            return endType;
         }
     }
 }

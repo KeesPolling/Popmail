@@ -6,7 +6,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
     {
         public static Header Header;
         public string Provider { get; set; }
-        public string ProviderID { get; set; }
+        public string ProviderId { get; set; }
 
         public List<string> BodyParts { get; set; }
     }

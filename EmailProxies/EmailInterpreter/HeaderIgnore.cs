@@ -1,28 +1,31 @@
 ﻿using System.Threading.Tasks;
+using PopMail.EmailProxies.IP_helpers;
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
     public class HeaderIgnore : FieldValue
     {
-        public static async Task<byte> ReadIgnore(IByteStreamReader Reader)
+        public static async Task<EndType> ReadIgnore(BufferedByteReader reader)
         {
-            var eol = new EOL();
-            var nextByte = await Reader.ReadByte();
-
-            while (!eol.End)
+            var eol = new Eol();
+            var nextByte = await reader.ReadByte();
+            var endType = EndType.None;
+            while ((endType == EndType.None))
             {
-                if (nextByte == (byte)SpecialByte.CarriageReturn)
+                switch (nextByte)
                 {
-                    nextByte = await eol.ProcessEOL(Reader);
-                    continue;
+                    case (byte)SpecialByte.CarriageReturn:
+                        endType = await eol.ProcessEol(reader);
+                        break;
+
+                    case (byte)SpecialByte.Backslash:
+                        nextByte = await reader.ReadByte();
+                        break;
                 }
-                if (nextByte == (byte)SpecialByte.Backslash) // "\": begin "quoted character"
-                {
-                    await Reader.ReadByte();
-                }
-                nextByte = await Reader.ReadByte();
+                if (endType == EndType.None) nextByte = await reader.ReadByte();
+
             }
-            return nextByte;
+            return endType;
         }
     }
 }

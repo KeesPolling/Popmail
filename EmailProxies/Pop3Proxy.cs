@@ -4,7 +4,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Networking.Sockets;
+using Windows.Security.Cryptography.Core;
 using PopMail.EmailProxies.EmailInterpreter;
+using PopMail.EmailProxies.IP_helpers;
 
 namespace PopMail.EmailProxies
 {
@@ -17,8 +19,8 @@ namespace PopMail.EmailProxies
         //private string accountName;
         //private string password;
         bool _disposed = false;
-        IpDialog _socketDialog;
-        Pop3Service _serviceProperties = new Pop3Service();
+        private IpDialog _socketDialog;
+        private readonly Pop3Service _serviceProperties = new Pop3Service();
    
         public class Pop3Exception : System.Exception
         {
@@ -43,14 +45,14 @@ namespace PopMail.EmailProxies
             public int NumberofBytes{get; set;}
         }
 
-        public Pop3Proxy(string Name, string Uri, string Port, string AccountName, string Password)
+        public Pop3Proxy(string name, string uri, string port, string accountName, string password)
         {
 
-            _serviceProperties.Address = Uri;
-            _serviceProperties.Name = Name;
-            _serviceProperties.ServiceName = Port;
-            _serviceProperties.AccountName = AccountName;
-            _serviceProperties.Password = Password;
+            _serviceProperties.Address = uri;
+            _serviceProperties.Name = name;
+            _serviceProperties.ServiceName = port;
+            _serviceProperties.AccountName = accountName;
+            _serviceProperties.Password = password;
             if (!CoreApplication.Properties.ContainsKey(_serviceProperties.Name))
             {
                 CoreApplication.Properties.Add(_serviceProperties.Name, null);
@@ -111,7 +113,7 @@ namespace PopMail.EmailProxies
         public async Task<MaildropStatistics> STAT()
         {
             var statistics = new MaildropStatistics();
-            var sendstring = "STAT\r\n";
+            const string sendstring = "STAT\r\n";
             var answer = await _socketDialog.GetSingleLineResponse(sendstring);
             if (answer.StartsWith("+OK "))
             {
@@ -126,7 +128,7 @@ namespace PopMail.EmailProxies
         public async Task<Dictionary<uint, uint>> LIST()
         {
             var mailItems = new Dictionary<uint, uint>();
-            var sendstring = "LIST\r\n";
+            const string sendstring = "LIST\r\n";
 
             var answer = await _socketDialog.GetMultiLineResponse(sendstring);
             string[] splitstrings = { "\r\n" };
@@ -138,11 +140,11 @@ namespace PopMail.EmailProxies
                 {
                     try
                     {
-                        var Numbers = item.Split(separator, 2);
+                        var numbers = item.Split(separator, 2);
                         mailItems.Add
                         (
-                            Convert.ToUInt32(Numbers[0], 10)
-                            , Convert.ToUInt32(Numbers[1])
+                            Convert.ToUInt32(numbers[0], 10)
+                            , Convert.ToUInt32(numbers[1])
                         );
                     }
                     catch (System.FormatException)
@@ -151,10 +153,10 @@ namespace PopMail.EmailProxies
             }
             return mailItems;
         }
-        public async Task<Email> RETR(int MessageNumber)
+        public async Task<Email> RETR(int messageNumber)
         {
             var mail = new Email();
-            var sendString = string.Format("RETR {0}\r\n", MessageNumber);
+            var sendString = string.Format("RETR {0}\r\n", messageNumber);
             await _socketDialog.GetStream(sendString);
 
             return mail;
@@ -187,7 +189,7 @@ namespace PopMail.EmailProxies
         public async Task<Dictionary<uint, string>> UILD()
         {
             var  mailItems= new Dictionary<uint, string>();
-            var sendstring = "UIDL\r\n";
+            const string sendstring = "UIDL\r\n";
 
             var answer = await _socketDialog.GetMultiLineResponse(sendstring);
             string[] splitstrings = { "\r\n" };
@@ -203,11 +205,11 @@ namespace PopMail.EmailProxies
                 {
                     try
                     {
-                        var Numbers = item.Split(separator, 2);
+                        var numbers = item.Split(separator, 2);
                         mailItems.Add
                         (
-                            Convert.ToUInt32(Numbers[0], 10)
-                            , Numbers[1]
+                            Convert.ToUInt32(numbers[0], 10)
+                            , numbers[1]
                         );
                     }
                     catch (System.FormatException)
@@ -231,7 +233,7 @@ namespace PopMail.EmailProxies
 
             if (disposing)
             { 
-                if (_socketDialog != null) _socketDialog.Dispose();
+                _socketDialog?.Dispose();
             }
             _disposed = true;
         }

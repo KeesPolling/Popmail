@@ -7,7 +7,7 @@
     <ProjectGuid>{2DDBCDE0-C392-4BC6-B490-B0D18AEBF9A3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EmailProxies</RootNamespace>
+    <RootNamespace>PopMail.EmailProxies</RootNamespace>
     <AssemblyName>EmailProxies</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
@@ -107,22 +107,25 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataStreamInterpreter.cs" />
+    <Compile Include="BufferedByteReader.cs" />
+    <Compile Include="EmailInterpreter\DateField.cs" />
+    <Compile Include="IP helpers\DataStreamInterpreter.cs" />
     <Compile Include="EmailInterpreter\AddressList.cs" />
     <Compile Include="EmailInterpreter\Email.cs" />
-    <Compile Include="EmailInterpreter\EOL.cs" />
+    <Compile Include="EmailInterpreter\Eol.cs" />
     <Compile Include="EmailInterpreter\FieldValue.cs" />
     <Compile Include="EmailInterpreter\Header.cs" />
     <Compile Include="EmailInterpreter\HeaderFieldName.cs" />
     <Compile Include="EmailInterpreter\HeaderIgnore.cs" />
-    <Compile Include="EmailInterpreter\IdentificationField.cs" />
-    <Compile Include="IByteStreamReader.cs" />
-    <Compile Include="IpDialog.cs" />
+    <Compile Include="IP helpers\IdentificationField.cs" />
+    <Compile Include="IP helpers\IByteStreamReader.cs" />
+    <Compile Include="IP helpers\IpDialog.cs" />
     <Compile Include="Pop3Proxy.cs" />
     <Compile Include="Pop3Service.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\EmailProxies.rd.xml" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>

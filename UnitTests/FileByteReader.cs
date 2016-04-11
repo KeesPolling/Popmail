@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Windows.Storage.Streams;
 using PopMail.EmailProxies;
 using Windows.Storage;
+using PopMail.EmailProxies.IP_helpers;
 
 namespace PopMail.UnitTests
 {

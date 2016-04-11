@@ -1,41 +1,45 @@
 ﻿using System;
 using System.Threading.Tasks;
+using PopMail.EmailProxies.IP_helpers;
 
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
-    internal class EOL
+    internal class Eol
     {
-        internal bool End { get; set; }
-        internal async Task<byte> ProcessEOL(IByteStreamReader Reader)
+        private FieldValue.EndType _endType; 
+
+        internal async Task<FieldValue.EndType> ProcessEol(BufferedByteReader reader)
         {
-            var rs = await Reader.ReadByte();
+            var rs = await reader.ReadByte();
             if (rs != (byte)FieldValue.SpecialByte.Linefeed)
             {
                 throw new FormatException("carriagereturn must be followed by linefeed");
             }
-            rs = await Reader.ReadByte();
-            if (rs == (byte)FieldValue.SpecialByte.Space)
+            _endType = FieldValue.EndType.EndOfField; // unless folowed by a space ( a folding white space = FWS)
+            rs = await reader.ReadByteAhead();
+            if (rs == (byte) FieldValue.SpecialByte.Space)
             {
-                rs = await Reader.ReadByte();
-                while (rs == (byte)FieldValue.SpecialByte.Space)
+                rs = await reader.ReadByteAhead();
+                while (rs == (byte) FieldValue.SpecialByte.Space)
                 {
-                    rs = await Reader.ReadByte();
+                    rs = await reader.ReadByteAhead();
                 }
-                if (rs == (byte)FieldValue.SpecialByte.CarriageReturn)
-                {
-                    this.End = true;
-                }
-                else
-                {
-                    this.End = false;
-                }
+                _endType = FieldValue.EndType.None; // unless folowed by a crlf (End of header)
+                // leave 1 space and the not space character on the buffer
+                if (reader.BufferSize > 2) reader.RemoveFirst(reader.BufferSize - 2);
             }
-            else
+            // Two crlf's with or without spaces in between signify te end of the Header 
+            if (rs != (byte) FieldValue.SpecialByte.CarriageReturn) return _endType;
+
+            reader.Clear();
+            rs = await reader.ReadByte();
+            if (rs != (byte)FieldValue.SpecialByte.Linefeed)
             {
-                this.End = true;
+                throw new FormatException("carriagereturn must be followed by linefeed");
             }
-            return rs;
+
+            return  FieldValue.EndType.EndOfHeader;
         }
     }
 }
