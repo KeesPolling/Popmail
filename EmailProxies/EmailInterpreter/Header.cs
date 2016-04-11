@@ -14,6 +14,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
         public AddressList Cc { get; set; }
         public AddressList Bcc { get; set; }
         public DateTime OrigDate { get; set; }
+        public DateTime Received { get; set; }
         public string MessageId { get; set; }
         public IdentificationField InReplyTo { get; set; }
         public IdentificationField References { get; set; }
@@ -73,6 +74,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
                         break;
                 }
             }
+            Received = DateTime.Now;
         }
     }
 }
