@@ -18,7 +18,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
                         endType = await eol.ProcessEol(reader);
                         break;
 
-                    case (byte)SpecialByte.Backslash:
+                    case (byte)SpecialByte.BackSlash:
                         nextByte = await reader.ReadByte();
                         break;
                 }

@@ -31,24 +31,24 @@ namespace PopMail.EmailProxies.EmailInterpreter
                 switch (await fieldName.ReadFieldName(reader))
                 {
                     case "From":
-                        this.From = new AddressList();
+                        From = new AddressList();
                         endType = await From.ReadAddressList(reader);
                         break;
                     case "Sender":
                         var sender = new AddressList();
                         endType = await sender.ReadAddressList(reader);
-                        this.Sender = sender.Adresses[0];
+                        Sender = sender.Adresses[0];
                         break;
                     case "Reply-To":
-                        this.ReplyTo = new AddressList();
+                        ReplyTo = new AddressList();
                         endType = await ReplyTo.ReadAddressList(reader);
                         break;
                     case "To":
-                        this.To = new AddressList();
+                        To = new AddressList();
                         endType = await To.ReadAddressList(reader);
                         break;
-                    case "Cc":
-                        this.Cc = new AddressList();
+                    case "CC":
+                        Cc = new AddressList();
                         endType = await Cc.ReadAddressList(reader);
                         break;
                     case "Date":
@@ -59,15 +59,25 @@ namespace PopMail.EmailProxies.EmailInterpreter
                     case "Message-ID":
                         var ids = new IdentificationField();
                         endType = await ids.ReadIdentifiers(reader);
-                        this.MessageId = ids.Identifiers[0];
+                        MessageId = ids.Identifiers[0];
                         break;
                     case "In-Reply-To":
                         InReplyTo = new IdentificationField();
                         endType = await InReplyTo.ReadIdentifiers(reader);
                         break;
                     case "References":
-                        this.References = new IdentificationField();
+                        References = new IdentificationField();
                         endType = await References.ReadIdentifiers(reader);
+                        break;
+                    case "Subject":
+                        var subject = new UnstructuredText();
+                        endType = await subject.ReadUnstructured(reader);
+                        Subject = subject.Value;
+                        break;
+                    case "Comments":
+                        var comments = new UnstructuredText();
+                        endType = await comments.ReadUnstructured(reader);
+                        Subject = comments.Value;
                         break;
                     default:
                         endType = await HeaderIgnore.ReadIgnore(reader);

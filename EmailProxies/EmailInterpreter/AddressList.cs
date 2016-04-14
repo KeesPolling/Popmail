@@ -79,15 +79,24 @@ namespace PopMail.EmailProxies.EmailInterpreter
                     case (byte)SpecialByte.CarriageReturn:
                         endType = await eol.ProcessEol(reader);
                         break;
+                    case (byte)SpecialByte.Equals:
+                        var resultString = await MimeQuotedString(reader);
+                        valueBuilder.Append(resultString);
+                        if (resultString != "=") valueBuilder.Append(' ');
+                        break;
+                    case (byte)SpecialByte.Space:
+                        if (valueBuilder.Length > 0 && valueBuilder[valueBuilder.Length - 1] != ' ')
+                        {
+                            valueBuilder.Append(' ');
+                        }
+                        break;
                     case (byte)SpecialByte.LeftParenthesis: // "(": begin comment
                         await ReadComment(reader);
                         break;
-                    case (byte)SpecialByte.Backslash: // "\": begin "quoted character"
-                        nextByte = await reader.ReadByte();
+                    case (byte)SpecialByte.BackSlash: // "\": begin "quoted character"
                         valueBuilder.Append(Convert.ToChar(nextByte));
                         break;
                     case (byte)SpecialByte.Quote: //  """: begin quoted string
-                        // TODO quotedString ;
                         valueBuilder.Append(await ReadQuotedString(reader));
                         break;
                     case (byte)SpecialByte.Colon: // ":": = end of group name

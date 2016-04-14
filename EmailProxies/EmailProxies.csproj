@@ -105,9 +105,12 @@
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
     <None Include="project.json" />
+    <PRIResource Include="Strings\Resources.resw" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BufferedByteReader.cs" />
+    <Compile Include="EmailInterpreter\UnstructuredText.cs" />
+    <Compile Include="EmailInterpreter\ContentType.cs" />
     <Compile Include="EmailInterpreter\DateField.cs" />
     <Compile Include="IP helpers\DataStreamInterpreter.cs" />
     <Compile Include="EmailInterpreter\AddressList.cs" />
@@ -125,7 +128,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\EmailProxies.rd.xml" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Assets\" />
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
