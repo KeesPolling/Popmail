@@ -70,5 +70,20 @@ namespace PopMail.UnitTests
             Assert.AreEqual("André Pirard", header.Cc.Adresses[0].Name, "This message is not Cced to André Pirard");
             Assert.AreEqual("If you can read this you understand the example.", header.Subject,"Subject not correct" );
         }
+
+        [TestMethod]
+        public async Task ReadContentType()
+        {
+            const string fileName = "RFC2046-1.txt";
+            var reader = new BufferedByteReader(new FileByteReader());
+            await reader.GetStream(fileName);
+            var header = new Header();
+            await header.ReadHeader(reader);
+            reader.Dispose(false);
+            Assert.AreEqual(1, header.ContentType.Parameters.Count, "Content-Type should have 1 parameter");
+            Assert.AreEqual("multipart" , header.ContentType.Type, "Type should be multipart");
+            Assert.AreEqual("42", header.ContentType.Parameters["boundary"], "Wrong value for boundary");
+
+        }
     }
 }

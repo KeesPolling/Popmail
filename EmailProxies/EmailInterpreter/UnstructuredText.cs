@@ -35,8 +35,8 @@ namespace PopMail.EmailProxies.EmailInterpreter
                                     valueBuilder.Remove(valueBuilder.Length - 1, 1);
                                 }
                             }
+                            MimeState = PreviousMimeQuoted.MimeQuoted;
                         }
-                        MimeState = PreviousMimeQuoted.MimeQuoted;
                         valueBuilder.Append(mimeResult);
                         break;
                     case (byte)SpecialByte.Space:

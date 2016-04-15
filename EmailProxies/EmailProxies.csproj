@@ -110,7 +110,7 @@
   <ItemGroup>
     <Compile Include="BufferedByteReader.cs" />
     <Compile Include="EmailInterpreter\UnstructuredText.cs" />
-    <Compile Include="EmailInterpreter\ContentType.cs" />
+    <Compile Include="EmailInterpreter\MimeHeaderField.cs" />
     <Compile Include="EmailInterpreter\DateField.cs" />
     <Compile Include="IP helpers\DataStreamInterpreter.cs" />
     <Compile Include="EmailInterpreter\AddressList.cs" />

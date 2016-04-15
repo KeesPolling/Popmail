@@ -81,8 +81,23 @@ namespace PopMail.EmailProxies.EmailInterpreter
                         break;
                     case (byte)SpecialByte.Equals:
                         var resultString = await MimeQuotedString(reader);
-                        valueBuilder.Append(resultString);
-                        if (resultString != "=") valueBuilder.Append(' ');
+                        if (resultString == "=")
+                        {
+                            MimeState = PreviousMimeQuoted.NotMime;
+                            valueBuilder.Append('=');
+                        }
+                        else
+                        {
+                            if (MimeState == PreviousMimeQuoted.MimeQuoted)
+                            {
+                                if (valueBuilder.Length > 0 && valueBuilder[valueBuilder.Length - 1] == ' ')
+                                {
+                                    valueBuilder.Remove(valueBuilder.Length - 1, 1);
+                                }
+                            }
+                            MimeState = PreviousMimeQuoted.MimeQuoted;
+                            valueBuilder.Append(resultString).Append(' ');
+                        }
                         break;
                     case (byte)SpecialByte.Space:
                         if (valueBuilder.Length > 0 && valueBuilder[valueBuilder.Length - 1] != ' ')
@@ -95,21 +110,26 @@ namespace PopMail.EmailProxies.EmailInterpreter
                         break;
                     case (byte)SpecialByte.BackSlash: // "\": begin "quoted character"
                         valueBuilder.Append(Convert.ToChar(nextByte));
+                        MimeState = PreviousMimeQuoted.NotMime;
                         break;
                     case (byte)SpecialByte.Quote: //  """: begin quoted string
                         valueBuilder.Append(await ReadQuotedString(reader));
+                        MimeState = PreviousMimeQuoted.NotMime;
                         break;
                     case (byte)SpecialByte.Colon: // ":": = end of group name
                         group.Name = valueBuilder.ToString().Trim();
                         valueBuilder = new StringBuilder();
+                        MimeState = PreviousMimeQuoted.NotMime;
                         break;
                     case (byte)SpecialByte.LeftAngledBracket: // "<": begin email address  (mailbox)
                         address.Name = valueBuilder.ToString().Trim();
                         valueBuilder = new StringBuilder();
+                        MimeState = PreviousMimeQuoted.NotMime;
                         break;
                     case (byte)SpecialByte.RightAngledBracket: // ">" : end of email address (mailbox)
                         address.MailBox = valueBuilder.ToString().Trim();
                         valueBuilder = new StringBuilder();
+                        MimeState = PreviousMimeQuoted.NotMime;
                         break;
                     case (byte)SpecialByte.Comma: // "," : end of name-adress spec
                         AddressAdd
@@ -120,15 +140,18 @@ namespace PopMail.EmailProxies.EmailInterpreter
                             );
                         address = new Adress();
                         valueBuilder = new StringBuilder();
+                        MimeState = PreviousMimeQuoted.NotMime;
                         break;
                     case (byte)SpecialByte.SemiColon: // ";" End of group
                         GroupAdd(group, address, valueBuilder);
                         group = new Group();
                         address = new Adress();
                         valueBuilder = new StringBuilder();
+                        MimeState = PreviousMimeQuoted.NotMime;
                         break;
                     default: // alle andere gevallen
                         valueBuilder.Append(Convert.ToChar(nextByte));
+                        MimeState = PreviousMimeQuoted.NotMime;
                         break;
                 }
                 if (endType == EndType.None) nextByte = await reader.ReadByte();

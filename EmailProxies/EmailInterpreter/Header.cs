@@ -21,6 +21,10 @@ namespace PopMail.EmailProxies.EmailInterpreter
         public string Subject { get; set; }
         public string Comments { get; set; }
         public List<string> Keywords { get; set; }
+
+        public MimeHeaderField ContentType { get; set; }
+
+
         public async Task ReadHeader( BufferedByteReader reader)
         {
             var fieldName = new HeaderFieldName();
@@ -79,6 +83,11 @@ namespace PopMail.EmailProxies.EmailInterpreter
                         endType = await comments.ReadUnstructured(reader);
                         Subject = comments.Value;
                         break;
+                    case "Content-Type":
+                        ContentType = new MimeHeaderField();
+                        endType = await ContentType.ReadMimeHeader(reader);
+                        break;
+
                     default:
                         endType = await HeaderIgnore.ReadIgnore(reader);
                         break;
