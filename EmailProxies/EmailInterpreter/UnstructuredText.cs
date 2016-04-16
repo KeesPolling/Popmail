@@ -9,7 +9,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
     internal class UnstructuredText : FieldValue
     {
         internal string Value { get; set; }
-        internal async Task<EndType> ReadUnstructured(BufferedByteReader reader)
+        internal override async Task<EndType> ReadFieldValue (BufferedByteReader reader)
         {
             var eol = new Eol();
             var valueBuilder = new StringBuilder();
@@ -52,6 +52,5 @@ namespace PopMail.EmailProxies.EmailInterpreter
             Value = valueBuilder.ToString().Trim();
             return endType;
         }
-
     }
 }

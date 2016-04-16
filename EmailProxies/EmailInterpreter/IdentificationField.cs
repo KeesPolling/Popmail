@@ -24,7 +24,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
             }
             return valueBuilder.ToString();
         }
-        public async Task<EndType> ReadIdentifiers(BufferedByteReader reader)
+        internal override async Task<EndType> ReadFieldValue(BufferedByteReader reader)
         {
 
             var eol = new Eol();

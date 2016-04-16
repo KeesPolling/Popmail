@@ -3,36 +3,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.UI.Xaml.Media;
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
-    public class MimeHeaderField : FieldValue
+    public class MimeField : FieldValue
     {
-        public string Type { get; set; }
-        public string SubType { get; set; }
+        public string Value { get; set; }
         public Dictionary<string, string> Parameters { get; set; } 
             = new Dictionary<string, string>();
 
-        internal async Task<EndType> ReadMimeHeader(BufferedByteReader reader)
+        internal override async Task<EndType> ReadFieldValue(BufferedByteReader reader)
         {
             var valueBuilder = new StringBuilder();
 
             var eol = new Eol();
             var endType = EndType.None;
-
-            // First word: Type
             var nextByte = await reader.ReadByte();
-            while (nextByte != (byte)SpecialByte.Slash)
+
+            // skip leading spaces
+            while (nextByte == (byte) SpecialByte.Space)
             {
-                valueBuilder.Append(Convert.ToChar(nextByte));
                 nextByte = await reader.ReadByte();
             }
-            Type = valueBuilder.ToString().ToLower().TrimStart();
-
-            //SubType
-            valueBuilder = new StringBuilder();
-            nextByte = await reader.ReadByte();
-            while 
+            // First word: Value
+            while
                 (
                     nextByte != (byte)SpecialByte.SemiColon &&
                     nextByte !=(byte)SpecialByte.Space &&
@@ -42,7 +37,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
                 valueBuilder.Append(Convert.ToChar(nextByte));
                 nextByte = await reader.ReadByte();
             }
-            SubType = valueBuilder.ToString().ToLower();
+            Value = valueBuilder.ToString().TrimStart();
             valueBuilder = new StringBuilder();
 
             // and now the parameters

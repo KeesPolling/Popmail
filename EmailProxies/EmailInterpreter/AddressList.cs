@@ -62,7 +62,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
             this.Groups.Add(group);
         }
 
-        internal async Task<EndType> ReadAddressList(BufferedByteReader reader)
+        internal override async Task<EndType> ReadFieldValue(BufferedByteReader reader)
         {
             var valueBuilder = new StringBuilder();
 

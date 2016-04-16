@@ -5,7 +5,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
 {
     public class HeaderIgnore : FieldValue
     {
-        public static async Task<EndType> ReadIgnore(BufferedByteReader reader)
+        internal override async Task<EndType> ReadFieldValue(BufferedByteReader reader)
         {
             var eol = new Eol();
             var nextByte = await reader.ReadByte();

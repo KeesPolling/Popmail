@@ -1,18 +1,12 @@
 ﻿using System;
-using System.Resources;
-using System.Reflection;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Resources;
-using Windows.Data.Text;
-using Windows.Devices.PointOfService;
-using Windows.Networking.NetworkOperators;
 using PopMail.EmailProxies.IP_helpers;
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
-    public class  FieldValue
+    public abstract class  FieldValue
     {
         internal enum PreviousMimeQuoted
         {
@@ -49,7 +43,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
             EndOfField,
             EndOfHeader
         }
-        internal PreviousMimeQuoted MimeState { get; set; }
+        internal  PreviousMimeQuoted MimeState { get; set; }
 
         internal class QuotedStringResult
         {
@@ -271,6 +265,8 @@ namespace PopMail.EmailProxies.EmailInterpreter
             }
             return number;
         }
+
+        internal abstract Task<EndType> ReadFieldValue(BufferedByteReader reader);
     }
 }
 
