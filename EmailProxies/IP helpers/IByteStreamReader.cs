@@ -6,8 +6,10 @@ namespace PopMail.EmailProxies.IP_helpers
 {
     public interface IByteStreamReader: IDisposable
     {
-        Task<DataReader> GetStream(string request);
-        Task<byte> ReadByte();
+        bool MessageEnd { get; set; }
+        byte[] EndBytes { get; set; }
+        Task GetReaderAsync(string request);
+        Task<byte> ReadByteAsync();
         void Dispose(bool disposing);
     }
 }

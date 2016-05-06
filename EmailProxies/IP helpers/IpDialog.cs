@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Data.Xml.Dom;
@@ -6,6 +8,9 @@ using Windows.Networking;
 using Windows.Networking.Sockets;
 using Windows.Storage;
 using Windows.Storage.Streams;
+using Windows.ApplicationModel.Core;
+using PopMail.EmailProxies;
+
 
 namespace PopMail.EmailProxies.IP_helpers
 {
@@ -19,25 +24,50 @@ namespace PopMail.EmailProxies.IP_helpers
         private bool _disposed;
         private uint _minBufferSize;
         private uint _maxBufferSize;
+        private bool _logResponse;
   //      uint _buffersize;
         private StreamSocket _streamSocket;
         private DataReader _dataReader;
         private DataWriter _dataWriter;
-//        StreamWriter _memWriter;
+        private IOutputStream _logStream;
+        private DataWriter _logWriter;
+        //        StreamWriter _memWriter;
 
         internal DataReader Reader => _dataReader;
-            
-   
-        private async Task SendRequest(string Request)
+
+        public bool MessageEnd { get; set; }
+
+        private List<byte> _buffer ;
+        
+        #region EndBytes;
+        private byte[] _endBytes;
+        public byte[] EndBytes
         {
-            _dataWriter.WriteString(Request);
-            await _dataWriter.StoreAsync();
-            await _dataWriter.FlushAsync();
+            get { return _endBytes; }
+            set
+            {
+                _endBytes = value;
+                _endString = System.Text.Encoding.ASCII.GetString(value);
+            }
         }
+        #endregion
+        #region EndString
+        private string _endString;
+        public string EndString
+        {
+            get { return _endString; }
+            set
+            {
+                _endString = value;
+                _endBytes = Encoding.ASCII.GetBytes(value);
+            }
+        }
+        #endregion
         /// <summary>
         /// The constructor sets some parameters to values that are a best
         /// match for a Pop3 service.
         /// </summary>
+        #region Constructor
         public IpDialog()
         {
             _streamSocket = new StreamSocket();
@@ -46,7 +76,29 @@ namespace PopMail.EmailProxies.IP_helpers
             _dataReader.InputStreamOptions = InputStreamOptions.Partial;
             _dataWriter = new DataWriter(_streamSocket.OutputStream);
             _dataWriter.UnicodeEncoding = Windows.Storage.Streams.UnicodeEncoding.Utf8;
+            // Assure configurable values are set
+            if (_minBufferSize == 0)
+            {
+                LoadConfiguredValues();
+            }
+
         }
+
+        /// <summary>
+        /// Reads designtime configurable values from an XML file.
+        /// </summary>
+        /// <returns></returns>
+        public void LoadConfiguredValues()
+        {
+            var values = (new Settings()).GetIpSettings();
+            _minBufferSize = (uint)values["MinBufferSize"];
+            _maxBufferSize = (uint)values["MaxBufferSize"];
+            _logResponse = (bool)values["LogResponse"];
+        }
+        #endregion Constructor
+
+        
+        #region Start dialog
         /// <summary>
         /// Connects to a Pop3 server
         /// </summary>
@@ -58,12 +110,6 @@ namespace PopMail.EmailProxies.IP_helpers
             var received = "";
             try
             {
-                // Assure configurable values are set
-                if (_minBufferSize == 0)
-                {
-                    await LoadConfiguredValues();
-                }
-
                 await _streamSocket.ConnectAsync(targetAddres, portName);
 
                 var count = await _dataReader.LoadAsync(_minBufferSize);
@@ -95,41 +141,13 @@ namespace PopMail.EmailProxies.IP_helpers
             }
             return received;
         }
-        /// <summary>
-        /// Reads designtime configurable values from an XML file.
-        /// </summary>
-        /// <returns></returns>
-        public async Task LoadConfiguredValues()
+        #endregion Start dialog
+        #region Get answers
+        private async Task SendRequest(string Request)
         {
-            try
-            {
-                var fileName = new Uri(String.Format("ms-appx:///Assets/Configuration/{0}", "All.xml"));
-                StorageFile file = await StorageFile.GetFileFromApplicationUriAsync
-                (
-                    fileName    
-                );
-                XmlDocument xmlConfiguration = await XmlDocument.LoadFromFileAsync(file);
-
-                // Set _minbuffersize
-                IXmlNode node = xmlConfiguration.DocumentElement.SelectSingleNode
-                (
-                    "./appSettings/add[@key='minBufferSize']/@value"
-                );
-                _minBufferSize =  Convert.ToUInt32(node?.NodeValue ?? "1023");
-
-                // Set _maxbuffersize
-                node = xmlConfiguration.DocumentElement.SelectSingleNode
-                    (
-                        "./appSettings/add[@key='maxBufferSize']/@value"
-                    );
-                _maxBufferSize = Convert.ToUInt32(node?.NodeValue ?? "64001"); 
-            }
-            catch (System.IO.FileNotFoundException) 
-            {
-                _minBufferSize = 1024;
-                _maxBufferSize = 64000;
-            }
-
+        _dataWriter.WriteString(Request);
+        await _dataWriter.StoreAsync();
+        await _dataWriter.FlushAsync();
         }
         /// <summary>
         /// Sends a request to the service
@@ -153,6 +171,7 @@ namespace PopMail.EmailProxies.IP_helpers
                 throw;
             }
         }
+
         /// <summary>
         /// Sends a request to the service
         /// </summary>
@@ -160,67 +179,233 @@ namespace PopMail.EmailProxies.IP_helpers
         /// <returns>the response from the server</returns>
         public async Task<string> GetMultiLineResponse(string request)
         {
-            var received = new StringBuilder();
+//            var received = new StringBuilder();
             var bufferSize = _minBufferSize;
             try
             {
-                await SendRequest(request);
+                //await SendRequest(request);
+
+                //var count = await _dataReader.LoadAsync(bufferSize);
+                //received.Append(_dataReader.ReadString(count));
+                //while (!received.ToString().EndsWith(_endString, StringComparison.Ordinal))
+                //{
+                //    bufferSize = bufferSize * 4;
+                //    if (bufferSize > _maxBufferSize)
+                //    {
+                //        bufferSize = _maxBufferSize;
+                //    }
+                //    count = await _dataReader.LoadAsync(bufferSize);
+                //    received.Append(_dataReader.ReadString(count));
+                //}
+                //return received.ToString();
+                await GetReaderAsync(request);
+                var str = await GetMemoryStreamAsync();
+                return Encoding.ASCII.GetString(str.ToArray());
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+        
+        /// <summary>
+        /// Sends a request to the service
+        /// </summary>
+        /// <param name="request">a valid request</param>
+        /// <returns>the response from the server</returns>
+        public async Task GetReaderAsync(string request)
+        {
+            var bufferSize = _minBufferSize;
+            try
+            {
+                if (_logResponse)
+                {
+
+                    var logFileName = string.Format("{0}.log", request.Substring(0, request.Length - 2));
+                    var logFile = await DownloadsFolder.CreateFileAsync(logFileName, CreationCollisionOption.GenerateUniqueName);
+                    var logStream = await logFile.OpenAsync(FileAccessMode.ReadWrite);
+                    _logStream = logStream.GetOutputStreamAt(0);
+                    _logWriter = new DataWriter(_logStream);
+                    await SendRequest(request);
+                }
                 var count = await _dataReader.LoadAsync(bufferSize);
-                received.Append(_dataReader.ReadString(count));
-                while (!received.ToString().EndsWith("\r\n.\r\n", StringComparison.Ordinal))
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public async Task<byte> ReadByteAsync()
+        {
+            var restLength = _dataReader.UnconsumedBufferLength;
+            var nextByte = (byte)0;
+            var endByteCounter = (_endBytes == null ? 0 :_endBytes.Length);
+            if (_endBytes != null)
+            {
+                while (restLength > 0 && restLength == endByteCounter)
+                {
+                    nextByte = _dataReader.ReadByte();
+                    if (_buffer == null) _buffer = new List<byte>();
+                    _buffer.Add(nextByte);
+                    restLength -= 1;
+                    if (_endBytes[_endBytes.Length - endByteCounter] == nextByte)
+                        endByteCounter -= 1;
+                }
+                if (endByteCounter == 0)
+                {
+                    MessageEnd = true;
+                    if (_logResponse)
+                    {
+                        _logWriter.WriteBytes (_buffer.ToArray());
+                        await _logWriter.StoreAsync();
+                        await _logStream.FlushAsync();
+                        _logStream.Dispose();
+                    }
+                    return 0;
+                }
+                if (_buffer?[0] != null)
+                {
+                    endByteCounter = _endBytes.Length;
+                    var bufferByte = _buffer[0];
+                    _buffer.RemoveAt(0);
+                    if (_logResponse) _logWriter.WriteByte(bufferByte);
+                    return bufferByte;
+                }
+            }
+            if (restLength != 0) return _dataReader.ReadByte();
+
+
+            var bufferSize = _minBufferSize;
+            try
+            {
+                var count = await _dataReader.LoadAsync(bufferSize);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            nextByte = _dataReader.ReadByte();
+            if (_logResponse) _logWriter.WriteByte(nextByte);
+            return nextByte;
+        }
+        #region GetMemoryStream
+        public async Task<MemoryStream> GetMemoryStreamAsync()
+        {
+            if (_endBytes == null)
+            {
+                throw new NullReferenceException("No end of message defined");
+            }
+            var received = new MemoryStream();
+            var bufferSize =_minBufferSize;
+            var restLength = _dataReader.UnconsumedBufferLength;
+            if  (restLength == 0) restLength = await _dataReader.LoadAsync(bufferSize);
+            var valueEnd = new byte[_endBytes.Length];
+            var value = new byte[restLength];
+            try
+            {
+               
+                var atEnd = await FillReceived((int)restLength, valueEnd, received);
+                while (!atEnd)
                 {
                     bufferSize = bufferSize * 4;
                     if (bufferSize > _maxBufferSize)
                     {
                         bufferSize = _maxBufferSize;
                     }
-                    count = await _dataReader.LoadAsync(bufferSize);
-                    received.Append(_dataReader.ReadString(count));
+                    restLength = await _dataReader.LoadAsync(bufferSize);
+                    atEnd = await FillReceived((int)restLength, valueEnd, received);
                 }
-                return received.ToString();
+                return received;
             }
             catch (Exception)
             {
 
                 throw;
             }
-        }        /// <summary>
-        /// Sends a request to the service
+        }
+        private async Task<bool> FillReceived(int nrOfBytesToRead, byte[] valueEnd, MemoryStream memStream)
+        {
+            var value = new byte[nrOfBytesToRead];
+            var bytesToWrite = new byte[nrOfBytesToRead - valueEnd.Length];
+            _dataReader.ReadBytes(value);
+            if (nrOfBytesToRead >= _endBytes.Length)
+            {
+                foreach (var posValue in valueEnd)
+                {
+                    if (posValue > 0)
+                    {
+                        memStream.WriteByte(posValue);
+                        if (_logResponse) _logWriter.WriteByte(posValue);
+                    }
+                }
+                Array.Copy(value, (nrOfBytesToRead - _endBytes.Length), valueEnd, 0, _endBytes.Length);
+                await memStream.WriteAsync(value, 0, nrOfBytesToRead - valueEnd.Length);
+                if (_logResponse)
+                    Array.Copy(value, bytesToWrite, nrOfBytesToRead - valueEnd.Length);
+                    _logWriter.WriteBytes(bytesToWrite);
+            }
+            else  CopyInEnd(value, valueEnd, null);
+            if (CompareArrays(valueEnd, _endBytes))
+            {
+                if (_logResponse)
+                {
+                    _logWriter.WriteBytes(valueEnd);
+                    await _logWriter.StoreAsync();
+                    await _logStream.FlushAsync();
+                    _logStream.Dispose();
+                }
+                return true;  // end of message
+            }
+            return false;
+        }
+        /// <summary>
+        /// An ordinal comparison of two byte arrays
         /// </summary>
-        /// <param name="request">a valid request</param>
-        /// <returns>the response from the server</returns>
-        public async Task<DataReader> GetStream(string request)
+        /// <param name="oneArray"></param>
+        /// <param name="otherArray"></param>
+        /// <returns>true if the same, otherwise false</returns>
+        private bool CompareArrays(byte[] oneArray, byte[] otherArray)
         {
-            var bufferSize = _minBufferSize;
-            try
-            {
-                await SendRequest(request);
-                var count = await _dataReader.LoadAsync(bufferSize);
-                return _dataReader;
-            }
-            catch (Exception)
-            {
+            if (oneArray.Length > otherArray.Length)
+                throw new ArgumentOutOfRangeException("otherArray", "Arrays must have same length");
 
-                throw;
+            for (var i = 0; i < oneArray.Length; i++)
+            {
+                if (oneArray[i] != otherArray[i]) return false;
             }
+            return true;
         }
-        public async Task<byte> ReadByte()
+        /// <summary>
+        ///  shifts the values of the target array to make place for the
+        ///  values of the source array at the end.
+        ///  values that fall out of the target array are written to the end of
+        ///  the stream if the stream is not null
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <param name="stream"></param>
+        /// <returns>the modified target array</returns>
+        private byte[] CopyInEnd(byte[] source, byte[] target, MemoryStream stream)
         {
-            if (_dataReader.UnconsumedBufferLength == 0)
+            if (source.Length > target.Length) throw new ArgumentOutOfRangeException("source", "source cannot be longer than target");
+            var d = target.Length - source.Length;
+            var s = source.Length;
+            for (var i = 0; i < target.Length; i++)
             {
-                var bufferSize = _minBufferSize;
-                try
-                {
-                    var count = await _dataReader.LoadAsync(bufferSize);
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                if (i >= s) target[i - s] = target[i];
+                else stream?.WriteByte(target[i]);
+                if (i >= d) target[i] = source[i - d];
             }
-            return _dataReader.ReadByte();
+            return target;
         }
+    
+        #endregion
+        #endregion
 
+        #region  Dispose
         public void Dispose()
         {
             Dispose(true);
@@ -237,5 +422,6 @@ namespace PopMail.EmailProxies.IP_helpers
                 _streamSocket?.Dispose();
             }
         }
+        #endregion
     }
 }

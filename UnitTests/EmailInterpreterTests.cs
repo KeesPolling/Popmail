@@ -23,7 +23,7 @@ namespace PopMail.UnitTests
         {
             const string fileName = "TestCFWSP.txt";
             var reader = new BufferedByteReader(new FileByteReader());
-            await reader.GetStream(fileName);
+            await reader.GetReaderAsync(fileName);
             var header = new Header();
             await header.ReadHeader(reader);
             reader.Dispose(false);
@@ -36,7 +36,7 @@ namespace PopMail.UnitTests
         {
             const string fileName = "testReferences.txt";
             var reader = new BufferedByteReader(new FileByteReader());
-            await reader.GetStream(fileName);
+            await reader.GetReaderAsync(fileName);
             var header = new Header();
             await header.ReadHeader(reader);
             reader.Dispose(false);
@@ -49,7 +49,7 @@ namespace PopMail.UnitTests
         {
             const string fileName = "TestCFWSP.txt";
             var reader = new BufferedByteReader(new FileByteReader());
-            await reader.GetStream(fileName);
+            await reader.GetReaderAsync(fileName);
             var header = new Header();
             await header.ReadHeader(reader);
             reader.Dispose(false);
@@ -61,7 +61,7 @@ namespace PopMail.UnitTests
         {
             const string fileName = "RFC2047-1.txt";
             var reader = new BufferedByteReader(new FileByteReader());
-            await reader.GetStream(fileName);
+            await reader.GetReaderAsync(fileName);
             var header = new Header();
             await header.ReadHeader(reader);
             reader.Dispose(false);
@@ -76,13 +76,23 @@ namespace PopMail.UnitTests
         {
             const string fileName = "RFC2046-1.txt";
             var reader = new BufferedByteReader(new FileByteReader());
-            await reader.GetStream(fileName);
+            await reader.GetReaderAsync(fileName);
             var header = new Header();
             await header.ReadHeader(reader);
             reader.Dispose(false);
-            Assert.AreEqual(1, header.ContentType.Parameters.Count, "Content-Type should have 1 parameter");
+            Assert.AreEqual(1, header.ContentType.Boundary.Length, 15);
             Assert.AreEqual("multipart" , header.ContentType.Type, "Type should be multipart");
-            Assert.AreEqual("42", header.ContentType.Parameters["boundary"], "Wrong value for boundary");
+            
+        }
+        [TestMethod]
+         public async Task ReadToEnd()
+        {
+            const string fileName = "RFC2046-1.txt";
+            var reader = new FileByteReader();
+            await reader.GetReaderAsync(fileName);
+            reader.Endstring = "\r\n.\r\n";
+            var stream = reader.GetMemoryStream();
+            reader.Dispose(false);
 
         }
     }

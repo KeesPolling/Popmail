@@ -29,7 +29,7 @@ namespace PopMail.UnitTests
         {
             using (var test = GetTestProxy())
             {
-                await this.Connect(test);
+                await Connect(test);
 
                 await test.Disconnect();
             }

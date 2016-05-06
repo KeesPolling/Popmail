@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
 using PopMail.EmailProxies;
@@ -9,10 +11,39 @@ namespace PopMail.UnitTests
 {
     public class FileByteReader : IByteStreamReader, IDisposable
     {
-        bool _disposed;
-        uint _minBufferSize = 1042;
-        DataReader _dataReader;
-        public async Task<DataReader> GetStream(string Request)
+        private bool _disposed;
+        private uint _minBufferSize = 1042;
+        private uint _maxBufferSize = 65000;
+        private DataReader _dataReader;
+
+
+        private List<byte> _buffer;
+        private string _endString;
+        private byte[] _endBytes;
+        private int _endByteCounter;
+        public bool MessageEnd { get; set; }
+
+        public byte[] EndBytes
+        {
+            get { return _endBytes; }
+            set
+            {
+                _endBytes = value;
+                _endString = System.Text.Encoding.ASCII.GetString(value);
+                _endByteCounter = _endBytes.Length;
+            }
+        }
+        public string Endstring
+        {
+            get { return _endString; }
+            set
+            {
+                _endString = value;
+                _endBytes = System.Text.Encoding.ASCII.GetBytes(value);
+            }
+        }
+
+        public async Task GetReaderAsync(string Request)
         {
             var storageFolder =  ApplicationData.Current.LocalFolder;
             StorageFile testFile = await storageFolder.GetFileAsync(Request);
@@ -22,7 +53,6 @@ namespace PopMail.UnitTests
             {
                 var buffer = await FileIO.ReadBufferAsync(testFile);
                 _dataReader = DataReader.FromBuffer(buffer);
-                return _dataReader;
             }
             catch (Exception ex)
             {
@@ -30,9 +60,37 @@ namespace PopMail.UnitTests
                 throw;
             }
         }
-        public async Task<byte> ReadByte()
+        public async Task<byte> ReadByteAsync()
         {
-            if (_dataReader.UnconsumedBufferLength == 0)
+            var restLength = _dataReader.UnconsumedBufferLength;
+
+            if (_endBytes != null)
+            {
+                while (restLength > 0 && restLength == _endByteCounter)
+                {
+                    var nextByte = _dataReader.ReadByte();
+                    if (_buffer == null) _buffer = new List<byte>();
+                    _buffer.Add(nextByte);
+                    restLength -= 1;
+                    if (_endBytes[_endBytes.Length - _endByteCounter] == nextByte)
+                        _endByteCounter -= 1;
+                }
+                if (_endByteCounter == 0)
+                {
+                    MessageEnd = true;
+                    return 0;
+                }
+                if (_buffer?[0] != null)
+                {
+                    _endByteCounter = _endBytes.Length;
+                    var bufferByte = _buffer[0];
+                    _buffer.RemoveAt(0);
+                    return bufferByte;
+                }
+            }
+
+            if (restLength != 0) return _dataReader.ReadByte();
+
             {
                 var bufferSize = _minBufferSize;
                 try
@@ -46,6 +104,100 @@ namespace PopMail.UnitTests
             }
             return _dataReader.ReadByte();
         }
+        public async Task<MemoryStream> GetMemoryStream()
+        {
+            if (_endBytes == null)
+            {
+                throw new NullReferenceException("No end of message defined");
+            }
+            var received = new MemoryStream();
+            var bufferSize = _minBufferSize;
+            var restLength = _dataReader.UnconsumedBufferLength;
+            var value = new byte[restLength];
+            _dataReader.ReadBytes(value);
+            var valueEnd = new byte[_endBytes.Length];
+            if (value.Length >= _endBytes.Length)
+            {
+                Array.Copy(value, (value.Length - _endBytes.Length), valueEnd, 0, _endBytes.Length);
+                await received.WriteAsync(value, 0, value.Length - valueEnd.Length);
+
+                if (CompareArrays(valueEnd, _endBytes))  return received;  // end of message
+            }
+            else
+                CopyInEnd(value, valueEnd, null);
+            try
+                {
+                    while (true)
+                    {
+                        bufferSize = bufferSize * 4;
+                        if (bufferSize > _maxBufferSize)
+                        {
+                            bufferSize = _maxBufferSize;
+                        }
+                        var count = await _dataReader.LoadAsync(bufferSize);
+                        value = new byte[count];
+                        _dataReader.ReadBytes(value);
+                        if (value.Length >= _endBytes.Length)
+                        {
+                            foreach (var posValue in valueEnd)
+                            {
+                                if (posValue > 0) received.WriteByte(posValue);
+                            }
+                            Array.Copy(value, (value.Length - _endBytes.Length), valueEnd, 0, _endBytes.Length);
+                            await received.WriteAsync(value, 0, value.Length - valueEnd.Length);
+
+                        }
+                        else CopyInEnd(value, valueEnd, received);
+                        if (CompareArrays(valueEnd, _endBytes)) return received;  // end of message
+                    }
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+        }
+        /// <summary>
+        /// An ordinal comparison of two byte arrays
+        /// </summary>
+        /// <param name="oneArray"></param>
+        /// <param name="otherArray"></param>
+        /// <returns>true if the same, otherwise false</returns>
+        private bool CompareArrays(byte[] oneArray, byte[] otherArray)
+        {
+            if (oneArray.Length > otherArray.Length)
+                throw new ArgumentOutOfRangeException("otherArray", "Arrays must have same length");
+
+            for (var i = 0; i < oneArray.Length; i++)
+            {
+                if (oneArray[i] != otherArray[i]) return false;
+            }
+            return true;
+        }
+        /// <summary>
+        ///  shifts the values of the target array to make place for the
+        ///  values of the source array at the end.
+        ///  values that fall out of the target array are written to the end of
+        ///  the stream if the stream is not null
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <param name="stream"></param>
+        /// <returns>the modified target array</returns>
+        private byte[] CopyInEnd(byte[] source, byte[] target, MemoryStream stream)
+        {
+            if (source.Length > target.Length) throw new ArgumentOutOfRangeException("source", "source cannot be longer than target");
+            var d = target.Length - source.Length;
+            var s = source.Length;
+            for (var i=0; i<target.Length; i++)
+            {
+                if (i >= s) target[i - s] = target[i];
+                else stream?.WriteByte(target[i]);
+                if (i >= d) target[i] = source[i - d];
+            }
+            return target;
+        }
+
         public void Dispose()
         {
             Dispose(true);

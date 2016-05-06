@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Resources;
@@ -8,12 +9,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
 {
     public abstract class  FieldValue
     {
-        internal enum PreviousMimeQuoted
-        {
-            MimeQuoted = 1,
-            PreviousMimeQuoted,
-            NotMime
-        }
+        #region SpecialByte
         internal enum SpecialByte : byte
         {
             Linefeed = 10,
@@ -37,42 +33,95 @@ namespace PopMail.EmailProxies.EmailInterpreter
             RightSquareBracket = 93,  // ]
             Underscore = 95  // _
         }
+        #endregion SpecialByte
+
+        #region EndOfLine
+
         public enum EndType
         {
             None = 0,
             EndOfField,
             EndOfHeader
         }
-        internal  PreviousMimeQuoted MimeState { get; set; }
 
+        private EndType _endType;
+
+        /// <summary>
+        /// Processes an end of line to determine wether it is part of a folding white space, 
+        ///  an end of field or an end of header.
+        ///  assumes a Carriage return (x0D) has just been read from the "reader".
+        /// </summary>
+        /// <param name="reader">BufferdByteReader to acces the underlying stream</param>
+        /// <returns>Enum EndType</returns>
+        internal async Task<FieldValue.EndType> ProcessEol(BufferedByteReader reader)
+        {
+            var rs = await reader.ReadByteAsync();
+            if (rs != (byte)FieldValue.SpecialByte.Linefeed)
+            {
+                throw new FormatException("carriagereturn must be followed by linefeed");
+            }
+            _endType = FieldValue.EndType.EndOfField; // unless folowed by a space ( a folding white space = FWS)
+            rs = await reader.ReadByteAhead();
+            if (rs == (byte)FieldValue.SpecialByte.Space)
+            {
+                rs = await reader.ReadByteAhead();
+                while (rs == (byte)FieldValue.SpecialByte.Space)
+                {
+                    rs = await reader.ReadByteAhead();
+                }
+                _endType = FieldValue.EndType.None; // unless folowed by a crlf (End of header)
+                // leave 1 space and the not space character on the buffer
+                if (reader.BufferSize > 2) reader.RemoveFirst(reader.BufferSize - 2);
+            }
+            // Two crlf's with or without spaces in between signify te end of the Header 
+            if (rs != (byte)FieldValue.SpecialByte.CarriageReturn) return _endType;
+
+            reader.Clear();
+            rs = await reader.ReadByteAsync();
+            if (rs != (byte)FieldValue.SpecialByte.Linefeed)
+            {
+                throw new FormatException("carriagereturn must be followed by linefeed");
+            }
+
+            return FieldValue.EndType.EndOfHeader;
+        }
+        #endregion EndOfLine
+
+        #region Quoted String
         internal class QuotedStringResult
         {
             internal EndType End { get; set; }
             internal string QuotedStringValue { get; set; }
         }
+
+        /// <summary>
+        /// Processes a quoted string
+        ///  assumes a quote has just been read from the "reader".
+        /// </summary>
+        /// <param name="reader">BufferdByteReader to acces the underlying stream</param>
+        /// <returns>QuotedStringResult (quoted string value & EbdType</returns>
         internal async Task<QuotedStringResult> ReadQuotedString(BufferedByteReader reader)
         {
             var valueBuilder = new StringBuilder();
-            var nextByte = await reader.ReadByte();
-            var eol = new Eol();
+            var nextByte = await reader.ReadByteAsync();
             var endType = EndType.None;
             while ((endType == EndType.None) && (nextByte != (byte)SpecialByte.Quote))
             {
                 switch (nextByte)
                 {
                     case (byte)SpecialByte.CarriageReturn:
-                        endType = await eol.ProcessEol(reader);
+                        endType = await ProcessEol(reader);
                         break;
 
                     case (byte)SpecialByte.BackSlash:
-                        nextByte = await reader.ReadByte();
+                        nextByte = await reader.ReadByteAsync();
                         valueBuilder.Append(Convert.ToChar(nextByte));
                         break;
                     default:
                         valueBuilder.Append(Convert.ToChar(nextByte));
                         break;
                 }
-                if (endType == EndType.None) nextByte = await reader.ReadByte();
+                if (endType == EndType.None) nextByte = await reader.ReadByteAsync();
             }
             var thisResult = new QuotedStringResult()
             {
@@ -81,14 +130,41 @@ namespace PopMail.EmailProxies.EmailInterpreter
             };
             return thisResult;
         }
+        internal async Task<EndType> ReadQuotedString(BufferedByteReader reader, BinaryWriter writer)
+        {
+            var nextByte = await reader.ReadByteAsync();
+            var endType = EndType.None;
+            while ((endType == EndType.None) && (nextByte != (byte)SpecialByte.Quote))
+            {
+                switch (nextByte)
+                {
+                    case (byte)SpecialByte.CarriageReturn:
+                        endType = await ProcessEol(reader);
+                        break;
+
+                    case (byte)SpecialByte.BackSlash:
+                        nextByte = await reader.ReadByteAsync();
+                        writer.Write(nextByte);
+                        break;
+                    default:
+                        writer.Write(nextByte);
+                        break;
+                }
+                if (endType == EndType.None) nextByte = await reader.ReadByteAsync();
+            }
+            return endType;
+        }
+        #endregion Quoted String
+
+        #region ReadComment
         internal async Task ReadComment(IByteStreamReader reader)
         {
-            var nextByte = await reader.ReadByte();
+            var nextByte = await reader.ReadByteAsync();
             while (nextByte != (byte)SpecialByte.RightParernthesis)
             {
                 if (nextByte == (byte)SpecialByte.BackSlash)
                 {
-                    nextByte = await reader.ReadByte();
+                    nextByte = await reader.ReadByteAsync();
                 }
                 else
                 {
@@ -97,9 +173,21 @@ namespace PopMail.EmailProxies.EmailInterpreter
                         await ReadComment(reader);
                     }
                 }
-                nextByte = await reader.ReadByte();
+                nextByte = await reader.ReadByteAsync();
             }
         }
+        #endregion ReadComment
+
+        #region MimeQuotedString
+
+        internal enum PreviousMimeQuoted
+        {
+            MimeQuoted = 1,
+            PreviousMimeQuoted,
+            NotMime
+        }
+
+        internal PreviousMimeQuoted MimeState { get; set; }
 
         internal async Task<string> MimeQuotedString(BufferedByteReader reader)
         {
@@ -127,17 +215,18 @@ namespace PopMail.EmailProxies.EmailInterpreter
             {
                 charset = Encoding.GetEncoding(charSet);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                
-                charset = null;
+               charset = null;
             }
             if (charset == null)
             {
                 try
                 {
-                    var res = new ResourceLoader("EmailProxies/Resources");
-                    charSet = res.GetString(charSet);
+                    // Provide the base class for an encoding provider, 
+                    // which supplies encodings that are unavailable on this particular platform. 
+                    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                    // Now we can try again.
                     charset = Encoding.GetEncoding(charSet);
                 }
                 catch (Exception)
@@ -161,7 +250,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
             return resultString;
         }
 
-        private bool MimeCheckByte(byte byteToCheck)
+        internal bool MimeCheckByte(byte byteToCheck)
         {
             switch (byteToCheck)
             {
@@ -220,28 +309,29 @@ namespace PopMail.EmailProxies.EmailInterpreter
             var valueBuilder = new StringBuilder();
             while (valueBuilder.Length < 100  && nextByte != (byte)SpecialByte.QuestionMark)
             {
-                if (nextByte == (byte) SpecialByte.Equals)
+                switch (nextByte)
                 {
-                    var numbers = new byte[1];
-                    nextByte = await reader.ReadByteAhead();
-                    numbers[0] = ConvertHexToNumber(nextByte);
-                    numbers[0] = (byte) (numbers[0]*16);
-                    nextByte = await reader.ReadByteAhead();
-                    numbers[0] = (byte) (numbers[0] + ConvertHexToNumber(nextByte));
-                    valueBuilder.Append(charset.GetString(numbers));
-                }
-                else
-                {
-                    if (nextByte == (byte) SpecialByte.Underscore)
-                    {
+                    case (byte)SpecialByte.Equals:
+                        // two byte Hex number ahead
+                        var number = new byte[1]; // GetString needs a Byte Array 
+                        // First Byte ....
+                        nextByte = await reader.ReadByteAhead();
+                        number[0] = ConvertHexToNumber(nextByte);
+                        
+                        number[0] = (byte)(number[0] * 16);
+                        // second Byte
+                        nextByte = await reader.ReadByteAhead();
+                        number[0] = (byte)(number[0] + ConvertHexToNumber(nextByte));
+                        // Now we know the character in the encoding
+                        valueBuilder.Append(charset.GetString(number));
+                        break;
+                    case (byte)SpecialByte.Underscore:
                         valueBuilder.Append(' ');
-                    }
-                    else
-                    {
+                        break;
+                    default:
                         if (!MimeCheckByte(nextByte)) return "=";
-
                         valueBuilder.Append(Convert.ToChar(nextByte));
-                    }
+                        break;
                 }
                 nextByte = await reader.ReadByteAhead();
             }
@@ -252,7 +342,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
             return valueBuilder.ToString();
         }
 
-        private byte ConvertHexToNumber(byte nextByte)
+        private static byte ConvertHexToNumber(byte nextByte)
         {
             byte number = 0;
             if (nextByte >= 48 && nextByte <= 57) // nummers 0 - 9
@@ -265,8 +355,8 @@ namespace PopMail.EmailProxies.EmailInterpreter
             }
             return number;
         }
+        #endregion MimeQuotedString
 
-        internal abstract Task<EndType> ReadFieldValue(BufferedByteReader reader);
     }
 }
 

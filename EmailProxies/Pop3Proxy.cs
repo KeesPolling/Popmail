@@ -129,7 +129,7 @@ namespace PopMail.EmailProxies
         {
             var mailItems = new Dictionary<uint, uint>();
             const string sendstring = "LIST\r\n";
-
+            _socketDialog.EndString = "\r\n.\r\n";
             var answer = await _socketDialog.GetMultiLineResponse(sendstring);
             string[] splitstrings = { "\r\n" };
             var items = answer.Split(splitstrings, StringSplitOptions.None);
@@ -157,7 +157,7 @@ namespace PopMail.EmailProxies
         {
             var mail = new Email();
             var sendString = string.Format("RETR {0}\r\n", messageNumber);
-            await _socketDialog.GetStream(sendString);
+            await _socketDialog.GetReaderAsync(sendString);
 
             return mail;
         }
@@ -190,7 +190,7 @@ namespace PopMail.EmailProxies
         {
             var  mailItems= new Dictionary<uint, string>();
             const string sendstring = "UIDL\r\n";
-
+            _socketDialog.EndBytes = new byte[5] { 13, 10, 46, 13, 10 }; // \r\n.\r\n
             var answer = await _socketDialog.GetMultiLineResponse(sendstring);
             string[] splitstrings = { "\r\n" };
             var items = answer.Split(splitstrings, StringSplitOptions.None);

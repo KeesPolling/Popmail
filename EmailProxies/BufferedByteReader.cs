@@ -12,28 +12,39 @@ namespace PopMail.EmailProxies
 
         public int BufferSize => _bufferBytes.Count;
 
+        public bool MessageEnd
+        {
+            get { return _byteReader.MessageEnd; }
+            set { _byteReader.MessageEnd = value; }
+        }
+        public byte[] EndBytes
+        {
+            get { return _byteReader.EndBytes; }
+            set { _byteReader.EndBytes = value; }
+        } 
+
         public BufferedByteReader(IByteStreamReader byteReader)
         {
             _byteReader = byteReader;
         }
 
-        public async Task<DataReader> GetStream(string request)
+        public async Task GetReaderAsync(string request)
         {
-            return await _byteReader.GetStream(request);
+           await _byteReader.GetReaderAsync(request);
         }
 
         public async Task<byte> ReadByteAhead()
         {
-            var byteRead = await _byteReader.ReadByte();
+            var byteRead = await _byteReader.ReadByteAsync();
             _bufferBytes.Add(byteRead);
             return byteRead;
         }
 
-        public async Task<byte> ReadByte()
+        public async Task<byte> ReadByteAsync()
         {
             if (_bufferBytes.Count == 0)
             {
-                return await _byteReader.ReadByte();
+                return await _byteReader.ReadByteAsync();
             }
             var byteRead = _bufferBytes[0];
             _bufferBytes.RemoveAt(0);

@@ -1,0 +1,35 @@
+From: Nathaniel Borenstein <nsb@bellcore.com>
+To: Ned Freed <ned@innosoft.com>
+Date: Sun, 21 Mar 1993 23:56:48 -0800 (PST)
+Subject: Sample message
+MIME-Version: 1.0
+Content-type: multipart/mixed; boundary="simple boundary"
+
+This is the preamble.  It is to be ignored, though it
+is a handy place for composition agents to include an
+explanatory note to non-MIME conformant readers.
+
+--simple boundary
+
+This is implicitly typed plain US-ASCII text.
+It does NOT end with a linebreak.
+--simple boundary
+Content-type: text/plain; charset=us-ascii
+
+This is explicitly typed plain US-ASCII text.
+It DOES end with a linebreak.
+
+--simple boundary--
+
+This is the epilogue.  It is also to be ignored.
+euigdipgggwegy	2gip	igy23791g31g138798971290g12e97g2e1
+010j013jdj91039j1980h132hud2187y2ghi2g727727777`777
+wdqi8udq1hhdhdhdo1i12nsmaxnhd198dbn x iuye82`2998992ol2l
+i3i3ii33 edu                                              
+eioieeieie
+eueeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee                                 
+eiiiiiiiiiiii eiuieeeeeeeeeeeeeeeeeeeeee eeeeeeeeeeeeeeee
+i                                                              i3i3ii33
+ignored
+egf
+.
