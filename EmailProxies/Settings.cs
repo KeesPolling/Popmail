@@ -31,7 +31,8 @@ namespace PopMail.EmailProxies
             ipSettings["MinBufferSize"] = (uint)1024;
             ipSettings["MaxBufferSize"] = (uint)65536;
             ipSettings["LogResponse"] = (bool)true;  //TODO this mist be set to false!!!!
-        }
+            ipSettings["Timeout"] = (uint)1000;
+            }
         internal IPropertySet GetIpSettings()
         {
             ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;

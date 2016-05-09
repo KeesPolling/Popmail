@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BufferedByteReader.cs" />
+    <Compile Include="CustomExtensions.cs" />
     <Compile Include="EmailInterpreter\BodyPart.cs" />
     <Compile Include="EmailInterpreter\BodyPartReader.cs" />
     <Compile Include="EmailInterpreter\ContentTypeFieldValue.cs" />

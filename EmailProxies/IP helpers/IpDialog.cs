@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Data.Xml.Dom;
 using Windows.Networking;
@@ -25,6 +26,7 @@ namespace PopMail.EmailProxies.IP_helpers
         private uint _minBufferSize;
         private uint _maxBufferSize;
         private bool _logResponse;
+        private int _timeOut;
   //      uint _buffersize;
         private StreamSocket _streamSocket;
         private DataReader _dataReader;
@@ -94,17 +96,18 @@ namespace PopMail.EmailProxies.IP_helpers
             _minBufferSize = (uint)values["MinBufferSize"];
             _maxBufferSize = (uint)values["MaxBufferSize"];
             _logResponse = (bool)values["LogResponse"];
+            _timeOut = (int)(uint)values["Timeout"];
         }
         #endregion Constructor
 
-        
-        #region Start dialog
-        /// <summary>
-        /// Connects to a Pop3 server
-        /// </summary>
-        /// <param name="targetAddres">Ip adress of the server</param>
-        /// <param name="portName">Port adress of the service</param>
-        /// <returns>Welcome text from the service upon establishing a connection</returns>
+
+            #region Start dialog
+            /// <summary>
+            /// Connects to a Pop3 server
+            /// </summary>
+            /// <param name="targetAddres">Ip adress of the server</param>
+            /// <param name="portName">Port adress of the service</param>
+            /// <returns>Welcome text from the service upon establishing a connection</returns>
         public async Task<string> Start(HostName targetAddres, string portName)
         {
             var received = "";
@@ -149,6 +152,14 @@ namespace PopMail.EmailProxies.IP_helpers
         await _dataWriter.StoreAsync();
         await _dataWriter.FlushAsync();
         }
+
+        private async Task<uint> LoadReader(uint bufferSize)
+        {
+            var task = _dataReader.LoadAsync(bufferSize).AsTask();
+            var count = await task.TimeoutAfter<uint>(_timeOut).ConfigureAwait(false);
+            return count;
+
+        }
         /// <summary>
         /// Sends a request to the service
         /// </summary>
@@ -158,18 +169,10 @@ namespace PopMail.EmailProxies.IP_helpers
         {
             var received = new StringBuilder();
             var bufferSize = _minBufferSize;
-            try
-            {
-                await SendRequest(request);
-                var count = await _dataReader.LoadAsync(bufferSize);
-                received.Append(_dataReader.ReadString(count));
-                return received.ToString();
-            }
-            catch (Exception)
-            {
-                
-                throw;
-            }
+            await SendRequest(request);
+            var count = await LoadReader(_minBufferSize).ConfigureAwait(false);
+            received.Append(_dataReader.ReadString(count));
+            return received.ToString();
         }
 
         /// <summary>
@@ -281,7 +284,7 @@ namespace PopMail.EmailProxies.IP_helpers
             var bufferSize = _minBufferSize;
             try
             {
-                var count = await _dataReader.LoadAsync(bufferSize);
+                var count = await LoadReader(bufferSize).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -301,7 +304,8 @@ namespace PopMail.EmailProxies.IP_helpers
             var received = new MemoryStream();
             var bufferSize =_minBufferSize;
             var restLength = _dataReader.UnconsumedBufferLength;
-            if  (restLength == 0) restLength = await _dataReader.LoadAsync(bufferSize);
+            if  (restLength == 0)
+                restLength = await _dataReader.LoadAsync(bufferSize);
             var valueEnd = new byte[_endBytes.Length];
             var value = new byte[restLength];
             try
@@ -315,7 +319,7 @@ namespace PopMail.EmailProxies.IP_helpers
                     {
                         bufferSize = _maxBufferSize;
                     }
-                    restLength = await _dataReader.LoadAsync(bufferSize);
+                    restLength = await LoadReader(bufferSize).ConfigureAwait(false);
                     atEnd = await FillReceived((int)restLength, valueEnd, received);
                 }
                 return received;
@@ -404,7 +408,7 @@ namespace PopMail.EmailProxies.IP_helpers
     
         #endregion
         #endregion
-
+        
         #region  Dispose
         public void Dispose()
         {
