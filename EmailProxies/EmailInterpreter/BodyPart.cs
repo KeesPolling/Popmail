@@ -9,15 +9,15 @@ namespace PopMail.EmailProxies.EmailInterpreter
 {
     public class BodyPart
     {
-        private static readonly Header Header  = new Header();
+        public static  Header Header { get; } = new Header();
         public ContentTypeFieldValue ContentType => Header.ContentType;
 
         public List<BodyPart> BodyParts { get; private set; }
         public byte[] Body { get; private set; }
 
-        internal async Task ReadHeader(BufferedByteReader reader, byte[] boundary)
+        internal async Task ReadHeader(BufferedByteReader reader)
         {
-            await Header.ReadHeader(reader);
+            await Header.ReadHeader(reader).ConfigureAwait(false);
         }
     }
 }

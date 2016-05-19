@@ -23,7 +23,8 @@ namespace PopMail.EmailProxies.EmailInterpreter
         public List<string> Keywords { get; set; }
 
         public ContentTypeFieldValue  ContentType { get; set; }
-        public MimeFieldFieldValue ContentTransferEncoding { get; set; } 
+        public string ContentTransferEncoding { get; set; }
+        public string ContentId { get; set; } 
         public string ContentDescription { get; set; }
 
         public async Task ReadHeader( BufferedByteReader reader)
@@ -90,9 +91,15 @@ namespace PopMail.EmailProxies.EmailInterpreter
                         ContentType = new ContentTypeFieldValue();
                         endType = await ContentType.ReadFieldValue(reader);
                         break;
-                    case "Content-rrandfer-encoding":
-                        ContentTransferEncoding = new MimeFieldFieldValue();
-                        //endType = await ContentTransferEncoding.ReadFieldValue(reader);
+                    case "Content-transfer-encoding":
+                        var contentTransferEncoding = new MimeFieldFieldValue();
+                        ContentTransferEncoding = await contentTransferEncoding.ReadFieldValue(reader);
+                        endType = contentTransferEncoding.TypOfEnd;
+                        break;
+                    case "Content-ID":
+                        var newid = new IdentificationFieldValue();
+                        endType = await newid.ReadFieldValue(reader).ConfigureAwait(false);
+                        ContentId = newid.Identifiers[0];
                         break;
                     case "Content-description":
                         var description = new UnstructuredTextFieldValue();

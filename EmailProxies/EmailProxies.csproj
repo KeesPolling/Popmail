@@ -114,6 +114,7 @@
     <Compile Include="EmailInterpreter\BodyPart.cs" />
     <Compile Include="EmailInterpreter\BodyPartReader.cs" />
     <Compile Include="EmailInterpreter\ContentTypeFieldValue.cs" />
+    <Compile Include="EmailInterpreter\TextBody.cs" />
     <Compile Include="EmailInterpreter\UnstructuredTextFieldValue.cs" />
     <Compile Include="EmailInterpreter\MimeFieldFieldValue.cs" />
     <Compile Include="EmailInterpreter\DateFieldValue.cs" />

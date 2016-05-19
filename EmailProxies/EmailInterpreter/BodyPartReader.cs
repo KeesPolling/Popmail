@@ -18,24 +18,46 @@ namespace PopMail.EmailProxies.EmailInterpreter
 
     internal class BodyPartReader
     {
-        internal byte[] Boundary { get; private set; }
+        internal ContentTypeFieldValue _contentType { get; private set; }
+        private byte[] _boundary;
+        private  byte[] _boundaryStart = new byte[4] { 13, 10, 45, 45 };
 
-        internal async Task<List<BodyPart>> ReadBodyParts(byte[] boundary, BufferedByteReader reader)
+        internal BodyPartReader(ContentTypeFieldValue contentType, string encoding)
         {
-            Boundary = boundary;
+            _boundary = new byte[contentType.Boundary.Length + 4];
+            _boundaryStart.CopyTo(_boundary, 0);
+            contentType.Boundary.CopyTo(_boundary, 4);
+        }
+        internal async Task ReadToStart(BufferedByteReader reader)
+        {
+            var nextByte = await reader.ReadByteAsync();
+            var boundaryeByteIndex = 0;
+            while (boundaryeByteIndex < _boundary.Length)
+            {
+                if (nextByte == _boundary[0])
+                {
+                    nextByte = await reader.ReadByteAsync();
+                    boundaryeByteIndex = 1;
+                    while (boundaryeByteIndex < _boundary.Length && nextByte == _boundary[boundaryeByteIndex])
+                    {
+                        nextByte = await reader.ReadByteAsync();
+                        boundaryeByteIndex += 1;
+                    }
+                }
+                else nextByte = await reader.ReadByteAsync();
+            }
+        }
+        internal async Task<List<BodyPart>> ReadBodyPart( BufferedByteReader reader)
+        {
             var bodyParts = new List<BodyPart>();
             var nextByte = await reader.ReadByteAsync();
-            var endBytes = new byte[5] {13,10, 46, 13, 10};
-            reader.EndBytes = endBytes;
-            while (!reader.MessageEnd)
             {
-                if (nextByte == (byte) SpecialByte.CarriageReturn)
+                if (nextByte == _boundary[0])
                 {
                     if (await CheckBytes(reader))
                     {
                         var bodyPart = new BodyPart();
-                         bodyPart.ReadHeader(reader, boundary);
-
+                        await bodyPart.ReadHeader(reader).ConfigureAwait(false);
                     }
                 }
                 nextByte = await reader.ReadByteAsync();
@@ -45,16 +67,11 @@ namespace PopMail.EmailProxies.EmailInterpreter
 
         private async Task<bool> CheckBytes(BufferedByteReader reader)
         {
-            if (await reader.ReadByteAsync() != (byte) SpecialByte.Linefeed)
-                return false;
-            if (await reader.ReadByteAsync() != (byte)SpecialByte.Hyphen)
-                return false;
-            if (await reader.ReadByteAsync() != (byte)SpecialByte.Hyphen)
-                return false;
-            var i = 0;
-            while (i < Boundary.Length)
+            var i = 1;
+            while (i < _boundary.Length)
             {
-                if (await reader.ReadByteAsync() != Boundary[i]) return false;
+                if (await reader.ReadByteAsync() != _boundary[i]) return false;
+                i += 1;
             }
             return true;
         }

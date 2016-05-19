@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Windows.Networking.NetworkOperators;
 using PopMail.EmailProxies.IP_helpers;
+using System.IO;
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
@@ -15,18 +16,20 @@ namespace PopMail.EmailProxies.EmailInterpreter
         public DateTime Received { get; set; }
         public ContentTypeFieldValue ContentType => Header.ContentType;
         public List<BodyPart> BodyParts { get; private set; }
-        public byte[] Body { get; private set; }
-
+        public MemoryStream Body { get; private set; }
         public async Task GetMail(IByteStreamReader streamReader)
         {
             var reader = new BufferedByteReader(streamReader);
             await Header.ReadHeader(reader);
-            if (ContentType.Type == "multipart")
+            switch (ContentType.Type)
             {
-                var bodyPartReader = new BodyPartReader();
-                BodyParts = await bodyPartReader.ReadBodyParts(ContentType.Parameters["boundary"], reader);
+                case "text":
+                    
+                case "multipart":
+                    var bodyPartReader = new BodyPartReader(ContentType, Header.ContentTransferEncoding);
+                    BodyParts = await bodyPartReader.ReadBodyPart(reader);
+                    break;
             }
-
 
             Received = DateTime.Now;
         }

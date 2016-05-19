@@ -45,6 +45,10 @@ namespace PopMail.EmailProxies.EmailInterpreter
         }
 
         private EndType _endType;
+        public EndType TypOfEnd
+        {
+            get { return _endType; }
+        }
 
         /// <summary>
         /// Processes an end of line to determine wether it is part of a folding white space, 
@@ -82,8 +86,8 @@ namespace PopMail.EmailProxies.EmailInterpreter
             {
                 throw new FormatException("carriagereturn must be followed by linefeed");
             }
-
-            return FieldValue.EndType.EndOfHeader;
+            _endType = EndType.EndOfHeader;
+            return _endType;
         }
         #endregion EndOfLine
 
@@ -314,14 +318,18 @@ namespace PopMail.EmailProxies.EmailInterpreter
                     case (byte)SpecialByte.Equals:
                         // two byte Hex number ahead
                         var number = new byte[1]; // GetString needs a Byte Array 
+                        var hex = new byte[2];
                         // First Byte ....
-                        nextByte = await reader.ReadByteAhead();
-                        number[0] = ConvertHexToNumber(nextByte);
-                        
-                        number[0] = (byte)(number[0] * 16);
-                        // second Byte
-                        nextByte = await reader.ReadByteAhead();
-                        number[0] = (byte)(number[0] + ConvertHexToNumber(nextByte));
+                        hex[0] = await reader.ReadByteAhead();
+                        hex[1] = await reader.ReadByteAhead();
+                        if (!byte.TryParse(
+                                Encoding.ASCII.GetString(hex),
+                                System.Globalization.NumberStyles.HexNumber,
+                                System.Globalization.CultureInfo.InvariantCulture,
+                                out number[0]))
+                        {
+                            return "=";
+                        }
                         // Now we know the character in the encoding
                         valueBuilder.Append(charset.GetString(number));
                         break;
@@ -342,19 +350,6 @@ namespace PopMail.EmailProxies.EmailInterpreter
             return valueBuilder.ToString();
         }
 
-        private static byte ConvertHexToNumber(byte nextByte)
-        {
-            byte number = 0;
-            if (nextByte >= 48 && nextByte <= 57) // nummers 0 - 9
-            {
-                number = (byte)(nextByte - 48);
-            }
-            else
-            {
-                number = (byte)(nextByte - 55); // A = ascii 65 => 10
-            }
-            return number;
-        }
         #endregion MimeQuotedString
 
     }

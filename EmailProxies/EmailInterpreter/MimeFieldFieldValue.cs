@@ -2,17 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
     public class MimeFieldFieldValue : FieldValue
     {
-        public string Value { get; set; }
-        public Dictionary<string, byte[]> Parameters { get; set; } 
-            = new Dictionary<string, byte[]>();
-
-        internal EndType EndType { get; set; } = EndType.None;
+        
 
         internal async Task<byte[]> ReadBytesParameter(BufferedByteReader reader)
         {
@@ -27,11 +24,23 @@ namespace PopMail.EmailProxies.EmailInterpreter
                     memStream.WriteByte(nextByte);
                     nextByte = await reader.ReadByteAsync();
                 }
-                if (nextByte == (byte)SpecialByte.CarriageReturn) EndType = await ProcessEol(reader);
+                if (nextByte == (byte)SpecialByte.CarriageReturn) await ProcessEol(reader);
             }
             var bytes = memStream.ToArray();
             memStream.Dispose();
             return bytes;
+        }
+        internal async Task<DateTime> ReadDateParameter(BufferedByteReader reader)
+        {
+            var stringValue = await ReadStringParameter(reader);
+            var dateTimeValue = Convert.ToDateTime(stringValue, CultureInfo.InvariantCulture);
+            return dateTimeValue;
+        }
+        internal async Task<Int32> ReadNumberParameter(BufferedByteReader reader)
+        {
+            var stringValue = await ReadStringParameter(reader);
+            var numberValue = Convert.ToInt32(stringValue);
+            return numberValue;
         }
         internal async Task<string> ReadStringParameter(BufferedByteReader reader)
         {
@@ -54,12 +63,12 @@ namespace PopMail.EmailProxies.EmailInterpreter
         { 
             var nextByte = await reader.ReadByteAsync();
             var memStream = new MemoryStream();
-            while ((EndType == EndType.None) && (nextByte == (byte)SpecialByte.Space || nextByte == (byte)SpecialByte.CarriageReturn))
+            while ((TypOfEnd == EndType.None) && (nextByte == (byte)SpecialByte.Space || nextByte == (byte)SpecialByte.CarriageReturn))
             {
                 switch (nextByte)
                 {
                     case (byte)SpecialByte.CarriageReturn:
-                        EndType = await ProcessEol(reader);
+                        await ProcessEol(reader);
                         break;
                     case (byte)SpecialByte.Space:
                         break;
@@ -69,14 +78,14 @@ namespace PopMail.EmailProxies.EmailInterpreter
                    default: // alle andere gevallen
                        break;
                 }
-                if (EndType == EndType.None) nextByte = await reader.ReadByteAsync();
+                if (TypOfEnd == EndType.None) nextByte = await reader.ReadByteAsync();
             }
             while (MimeCheckByte(nextByte))
             {
                  memStream.WriteByte(nextByte);
                  nextByte = await reader.ReadByteAsync();
              }
-            if (nextByte == (byte)SpecialByte.CarriageReturn) EndType = await ProcessEol(reader);
+            if (nextByte == (byte)SpecialByte.CarriageReturn) await ProcessEol(reader);
             
             var bytes = memStream.ToArray();
             memStream.Dispose();
