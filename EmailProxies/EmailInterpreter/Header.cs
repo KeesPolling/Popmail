@@ -21,8 +21,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
         public string Subject { get; set; }
         public string Comments { get; set; }
         public List<string> Keywords { get; set; }
-
-        public ContentTypeFieldValue  ContentType { get; set; }
+        public ContentTypeFieldValue ContentType { get; set; } = new ContentTypeFieldValue();
         public string ContentTransferEncoding { get; set; }
         public string ContentId { get; set; } 
         public string ContentDescription { get; set; }

@@ -7,11 +7,11 @@ namespace PopMail.EmailProxies.EmailInterpreter
 {
     public class ContentTypeFieldValue : MimeFieldFieldValue
     {
-        public string Type { get; private set; }
-        public string SubType { get; private set; }
+        public string Type { get; private set; } = "Text";
+        public string SubType { get; private set; } = "plain";
         public string Charset { get; private set; }
         public byte[] Boundary { get; private set; }
-        public string TYPE { get; private set; }
+        public string TYPE { get; private set; } 
         public int Padding { get; private set; }
         public int Number { get; private set; }
         public int Total {get; private set;}

@@ -6,6 +6,7 @@ using Windows.Storage.Streams;
 using PopMail.EmailProxies;
 using Windows.Storage;
 using PopMail.EmailProxies.IP_helpers;
+using System.Threading;
 
 namespace PopMail.UnitTests
 {
@@ -104,7 +105,8 @@ namespace PopMail.UnitTests
             }
             return _dataReader.ReadByte();
         }
-        public async Task<MemoryStream> GetMemoryStream()
+        #region GetMemoryStream
+        public async Task<MemoryStream> GetMemoryStreamAsync()
         {
             if (_endBytes == null)
             {
@@ -113,49 +115,55 @@ namespace PopMail.UnitTests
             var received = new MemoryStream();
             var bufferSize = _minBufferSize;
             var restLength = _dataReader.UnconsumedBufferLength;
-            var value = new byte[restLength];
-            _dataReader.ReadBytes(value);
+            if (restLength == 0)
+                restLength = await _dataReader.LoadAsync(bufferSize);
             var valueEnd = new byte[_endBytes.Length];
-            if (value.Length >= _endBytes.Length)
-            {
-                Array.Copy(value, (value.Length - _endBytes.Length), valueEnd, 0, _endBytes.Length);
-                await received.WriteAsync(value, 0, value.Length - valueEnd.Length);
-
-                if (CompareArrays(valueEnd, _endBytes))  return received;  // end of message
-            }
-            else
-                CopyInEnd(value, valueEnd, null);
+            var value = new byte[restLength];
             try
-                {
-                    while (true)
-                    {
-                        bufferSize = bufferSize * 4;
-                        if (bufferSize > _maxBufferSize)
-                        {
-                            bufferSize = _maxBufferSize;
-                        }
-                        var count = await _dataReader.LoadAsync(bufferSize);
-                        value = new byte[count];
-                        _dataReader.ReadBytes(value);
-                        if (value.Length >= _endBytes.Length)
-                        {
-                            foreach (var posValue in valueEnd)
-                            {
-                                if (posValue > 0) received.WriteByte(posValue);
-                            }
-                            Array.Copy(value, (value.Length - _endBytes.Length), valueEnd, 0, _endBytes.Length);
-                            await received.WriteAsync(value, 0, value.Length - valueEnd.Length);
+            {
 
-                        }
-                        else CopyInEnd(value, valueEnd, received);
-                        if (CompareArrays(valueEnd, _endBytes)) return received;  // end of message
+                var atEnd = await FillReceived((int)restLength, valueEnd, received);
+                while (!atEnd)
+                {
+                    bufferSize = bufferSize * 4;
+                    if (bufferSize > _maxBufferSize)
+                    {
+                        bufferSize = _maxBufferSize;
+                    }
+                    restLength = await _dataReader.LoadAsync(bufferSize);
+                    atEnd = await FillReceived((int)restLength, valueEnd, received);
+                }
+                return received;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+        private async Task<bool> FillReceived(int nrOfBytesToRead, byte[] valueEnd, MemoryStream memStream)
+        {
+            var value = new byte[nrOfBytesToRead];
+            var bytesToWrite = new byte[nrOfBytesToRead - valueEnd.Length];
+            _dataReader.ReadBytes(value);
+            if (nrOfBytesToRead >= _endBytes.Length)
+            {
+                foreach (var posValue in valueEnd)
+                {
+                    if (posValue > 0)
+                    {
+                        memStream.WriteByte(posValue);
                     }
                 }
-                catch (Exception)
-                {
-
-                    throw;
-                }
+                Array.Copy(value, (nrOfBytesToRead - _endBytes.Length), valueEnd, 0, _endBytes.Length);
+                await memStream.WriteAsync(value, 0, nrOfBytesToRead - valueEnd.Length);
+            }
+            else CopyInEnd(value, valueEnd, null);
+            if (CompareArrays(valueEnd, _endBytes))
+            {
+                return true;  // end of message
+            }
+            return false;
         }
         /// <summary>
         /// An ordinal comparison of two byte arrays
@@ -189,7 +197,7 @@ namespace PopMail.UnitTests
             if (source.Length > target.Length) throw new ArgumentOutOfRangeException("source", "source cannot be longer than target");
             var d = target.Length - source.Length;
             var s = source.Length;
-            for (var i=0; i<target.Length; i++)
+            for (var i = 0; i < target.Length; i++)
             {
                 if (i >= s) target[i - s] = target[i];
                 else stream?.WriteByte(target[i]);
@@ -197,6 +205,9 @@ namespace PopMail.UnitTests
             }
             return target;
         }
+
+        #endregion
+
 
         public void Dispose()
         {

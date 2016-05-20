@@ -85,15 +85,14 @@ namespace PopMail.UnitTests
             
         }
         [TestMethod]
-         public async Task ReadToEnd()
+        public async Task ReadToEnd()
         {
             const string fileName = "RFC2046-1.txt";
             var reader = new FileByteReader();
             await reader.GetReaderAsync(fileName);
             reader.Endstring = "\r\n.\r\n";
-            var stream = reader.GetMemoryStream();
+            var stream = await reader.GetMemoryStreamAsync();
             reader.Dispose(false);
-
         }
     }
 }

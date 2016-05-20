@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 using Windows.ApplicationModel.Resources;
 
@@ -50,6 +47,8 @@ namespace PopMail.EmailProxies.EmailInterpreter
                 case "base64":
                     TransferEncoding = TextBody.transferEncoding.base64;
                     break;
+                default:
+                    throw new ArgumentException("Unknown type of Content-transfer-encoding", transferEncoding);
             }
             switch (textType.ToLower())
             {
@@ -65,63 +64,41 @@ namespace PopMail.EmailProxies.EmailInterpreter
             }
             Charset = charset;
         }
-        internal bool UnEncode()
+        internal bool UnEncode(MemoryStream encodedContent)
         {
-            switch (TransferEncoding)
+            EncodedContent = encodedContent;
+            try
             {
-                case transferEncoding.sevenBit:
-                    Content = Encoding.ASCII.GetString(EncodedContent.ToArray());
-                    break;
-                case transferEncoding.eightBit:
-                    Content = Encoding.GetEncoding(Charset).GetString(EncodedContent.ToArray());
-                    break;
-                case transferEncoding.base64:
-                    var base64String = Encoding.ASCII.GetString(EncodedContent.ToArray());
-                    Content = Encoding.GetEncoding(Charset).GetString(Convert.FromBase64String(base64String));
-                    break;
-                case transferEncoding.quotedPrintable:
-                    Content = GetStringFromQuotedPrintable(EncodedContent, Encoding.GetEncoding(Charset));
-                    break;
-            }
-            return true;
-        }
-        internal string GetStringFromQuotedPrintable(MemoryStream stream, Encoding charset)
-        {
-            var stringBuilder = new StringBuilder();
-            stream.Position = 0;
-            var nextByte = (byte)stream.ReadByte();
-            var twoBytes = new byte[2];
-            while (stream.Length > stream.Position)
-            {
-                if (nextByte == (byte)'=')
+                switch (TransferEncoding)
                 {
-                    if (!(stream.Length - stream.Position < 2))
-                    {
-                        twoBytes[0] = (byte)stream.ReadByte();
-                        twoBytes[1] = (byte)stream.ReadByte();
-                        var hex = Encoding.ASCII.GetString(twoBytes);
-                        if (hex == "\r\n") //soft eol;
-                        {
-                            nextByte = (byte)stream.ReadByte();
-                            continue;
-                        }
-                        if (!byte.TryParse(
-                            hex,
-                            System.Globalization.NumberStyles.HexNumber,
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            out nextByte))
-                        {
-                            stringBuilder.Append('=');
-                            stringBuilder.Append(hex);
-                            nextByte = (byte)stream.ReadByte();
-                            continue;
-                        }
-                    }
+                    case transferEncoding.sevenBit:
+                        Content = Encoding.ASCII.GetString(EncodedContent.ToArray());
+                        break;
+                    case transferEncoding.eightBit:
+                    case transferEncoding.binary:
+                        Content = Encoding.GetEncoding(Charset).GetString(EncodedContent.ToArray());
+                        break;
+                    case transferEncoding.quotedPrintable:
+                        Content = Encoding.GetEncoding(Charset).GetString
+                            (MailMethods.FromQuotedPrintable(EncodedContent).ToArray());
+                        break;
+                    case transferEncoding.base64:
+                        var base64String = Encoding.ASCII.GetString(EncodedContent.ToArray());
+                        Content = Encoding.GetEncoding(Charset).GetString(Convert.FromBase64String(base64String));
+                        break;
                 }
-                stringBuilder.Append(charset.GetString(new byte[1] {nextByte}));
-                nextByte = (byte)stream.ReadByte();
             }
-            return stringBuilder.ToString();
+            catch(Exception ex)
+            {
+                var stringBuilder = new StringBuilder(ex.Message);
+                stringBuilder.Append("\r\n\r\n");
+                var reader = new StreamReader(EncodedContent);
+                stringBuilder.Append(reader.ReadToEnd());
+                reader.Dispose();
+                return false;
+            }
+            EncodedContent.Dispose();
+            return true;
         }
     }
 }

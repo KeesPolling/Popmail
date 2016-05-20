@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
 using PopMail.EmailProxies.IP_helpers;
+using System.IO;
 
 namespace PopMail.EmailProxies
 {
@@ -50,7 +51,10 @@ namespace PopMail.EmailProxies
             _bufferBytes.RemoveAt(0);
             return byteRead;
         }
-
+        public async Task<MemoryStream> GetMemoryStreamAsync()
+        {
+            return await _byteReader.GetMemoryStreamAsync();
+        }
         public void Clear()
         {
             _bufferBytes.Clear();

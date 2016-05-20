@@ -21,16 +21,17 @@ namespace PopMail.EmailProxies.EmailInterpreter
         {
             var reader = new BufferedByteReader(streamReader);
             await Header.ReadHeader(reader);
-            switch (ContentType.Type)
+            if (ContentType.Type == "multipart")
             {
-                case "text":
-                    
-                case "multipart":
-                    var bodyPartReader = new BodyPartReader(ContentType, Header.ContentTransferEncoding);
-                    BodyParts = await bodyPartReader.ReadBodyPart(reader);
-                    break;
+                var bodyPartReader = new BodyPartReader(ContentType, Header.ContentTransferEncoding);
+                BodyParts = await bodyPartReader.ReadBodyPart(reader);
             }
+            else
+            {
 
+                var memstream = await streamReader.GetMemoryStreamAsync();
+                
+            }
             Received = DateTime.Now;
         }
     }

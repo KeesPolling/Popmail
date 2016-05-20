@@ -219,7 +219,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
             {
                 charset = Encoding.GetEncoding(charSet);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                charset = null;
             }

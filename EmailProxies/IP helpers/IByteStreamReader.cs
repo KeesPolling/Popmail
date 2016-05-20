@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Windows.Storage.Streams;
+using System.IO;
 
 namespace PopMail.EmailProxies.IP_helpers
 {
@@ -10,6 +10,7 @@ namespace PopMail.EmailProxies.IP_helpers
         byte[] EndBytes { get; set; }
         Task GetReaderAsync(string request);
         Task<byte> ReadByteAsync();
+        Task<MemoryStream> GetMemoryStreamAsync();
         void Dispose(bool disposing);
     }
 }
