@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using PopMail.EmailProxies.IP_helpers;
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
@@ -16,17 +13,15 @@ namespace PopMail.EmailProxies.EmailInterpreter
     }
     #endregion SpecialByte
 
-    internal class BodyPartReader
+    internal class BodyReader
     {
         internal ContentTypeFieldValue _contentType { get; private set; }
-        private byte[] _boundary;
-        private  byte[] _boundaryStart = new byte[4] { 13, 10, 45, 45 };
+        internal List<byte[]> Boundaries { get; set; }
+        private readonly  byte[] _boundaryStart = new byte[4] { 13, 10, 45, 45 }; // "\r\n--"
 
-        internal BodyPartReader(ContentTypeFieldValue contentType, string encoding)
+        internal BodyReader(ContentTypeFieldValue contentType, string encoding, List<byte[]> boundaries)
         {
-            _boundary = new byte[contentType.Boundary.Length + 4];
-            _boundaryStart.CopyTo(_boundary, 0);
-            contentType.Boundary.CopyTo(_boundary, 4);
+            Boundaries = boundaries;
         }
         internal async Task ReadToStart(BufferedByteReader reader)
         {
@@ -47,22 +42,23 @@ namespace PopMail.EmailProxies.EmailInterpreter
                 else nextByte = await reader.ReadByteAsync();
             }
         }
-        internal async Task<List<BodyPart>> ReadBodyPart( BufferedByteReader reader)
+        internal async Task<Body> ReadBody( BufferedByteReader reader)
         {
-            var bodyParts = new List<BodyPart>();
+            var body = new Body();
+            
             var nextByte = await reader.ReadByteAsync();
             {
                 if (nextByte == _boundary[0])
                 {
                     if (await CheckBytes(reader))
                     {
-                        var bodyPart = new BodyPart();
-                        await bodyPart.ReadHeader(reader).ConfigureAwait(false);
+                        var bodyPart = new Body();
+                        await bodyPart.Header.ReadHeader(reader);
                     }
                 }
                 nextByte = await reader.ReadByteAsync();
             }
-            return bodyParts;
+            return body;
         }
 
         private async Task<bool> CheckBytes(BufferedByteReader reader)
@@ -75,5 +71,41 @@ namespace PopMail.EmailProxies.EmailInterpreter
             }
             return true;
         }
-    }
+        public async Task<List<Body>> GetBodies(IByteStreamReader streamReader, ContentTypeFieldValue contentType, string transportEncoding)
+        {
+            var reader = new BufferedByteReader(streamReader);
+           
+            switch (contentType.Type)
+            {
+                case "multipart":
+                    var bodyPartReader = new BodyReader(ContentType, Header.ContentTransferEncoding);
+
+                    var bodies = await bodyPartReader.ReadBody(reader);
+                    break;
+                case "text":
+                    var textString = "";
+                    using (var memstream = await streamReader.GetMemoryStreamAsync())
+                    {
+                        using (var unEncoded = await MailMethods.UnEncode(memstream, Header.ContentTransferEncoding))
+                        {
+                            using (var textReader = new StreamReader(unEncoded, Encoding.GetEncoding(Header.ContentType.Charset)))
+                            {
+                                textString = await textReader.ReadToEndAsync();
+                            }
+                        }
+                    }
+                    var textBody = new Body();
+                    textBody.Content = (new MemoryStream(Encoding.Unicode.GetBytes(textString)));
+                    break;
+                case "image":
+                case "audio":
+                case "video":
+                case "application":
+                    var binaryBody = new Body();
+                    binaryBody.Content = await streamReader.GetMemoryStreamAsync());
+                    break;
+            }
+        }
+        }
+}
 }

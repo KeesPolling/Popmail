@@ -8,7 +8,7 @@ namespace PopMail.EmailProxies.EmailInterpreter
 {
     public class Header
     {
-        public AddressListFieldValue From{ get; set; }
+        public AddressListFieldValue From { get; set; }
         public AddressListFieldValue.Adress Sender { get; set; }
         public AddressListFieldValue ReplyTo { get; set; }
         public AddressListFieldValue To { get; set; }
@@ -21,10 +21,34 @@ namespace PopMail.EmailProxies.EmailInterpreter
         public string Subject { get; set; }
         public string Comments { get; set; }
         public List<string> Keywords { get; set; }
-        public ContentTypeFieldValue ContentType { get; set; } = new ContentTypeFieldValue();
+        public ContentTypeFieldValue ContentType { get; set; }
         public string ContentTransferEncoding { get; set; }
         public string ContentId { get; set; } 
         public string ContentDescription { get; set; }
+
+        public AddressListFieldValue AddressListFieldValue
+        {
+            get
+            {
+                throw new System.NotImplementedException();
+            }
+
+            set
+            {
+            }
+        }
+
+        public IdentificationFieldValue IdentificationFieldValue
+        {
+            get
+            {
+                throw new System.NotImplementedException();
+            }
+
+            set
+            {
+            }
+        }
 
         public async Task ReadHeader( BufferedByteReader reader)
         {

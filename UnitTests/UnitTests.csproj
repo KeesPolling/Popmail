@@ -109,9 +109,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EmailInterpreterTests.cs" />
+    <Compile Include="FileByteReader.cs" />
     <Compile Include="MainPageViewmodeTest.cs" />
     <Compile Include="DataModel.cs" />
-    <Compile Include="FileByteReader.cs" />
     <Compile Include="Pop3.cs" />
     <Compile Include="FileUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

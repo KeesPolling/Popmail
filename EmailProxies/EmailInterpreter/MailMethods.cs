@@ -1,5 +1,7 @@
 ﻿using System.Text;
 using System.IO;
+using System;
+using System.Threading.Tasks;
 
 namespace PopMail.EmailProxies.EmailInterpreter
 {
@@ -58,7 +60,52 @@ namespace PopMail.EmailProxies.EmailInterpreter
                 unEncoded.WriteByte(nextByte);
                 nextByte = (byte)encodedStream.ReadByte();
             }
+            buffer.Dispose();
             return unEncoded;
+        }
+        public static async Task<MemoryStream> UnEncode(MemoryStream encodedContent, string transferEncoding)
+        {
+            var unEncodedContent = new MemoryStream();
+            try
+            {
+                switch (transferEncoding.ToLower())
+                {
+                    case "7bit":
+                    case "8bit":
+                    case "binary":
+                        unEncodedContent = encodedContent;
+                        break;
+                    case "quoted-printable":
+                        unEncodedContent = MailMethods.FromQuotedPrintable(encodedContent);
+                        break;
+                    case "base64":
+                        var base64String = Encoding.ASCII.GetString(encodedContent.ToArray());
+                        var bytes = Convert.FromBase64String(base64String);
+                        await unEncodedContent.WriteAsync(bytes, 0, bytes.Length);
+                        break;
+                    default:
+                        using (var writer = new StreamWriter(unEncodedContent, Encoding.ASCII))
+                        {
+                            writer.WriteLine("Unknown 'Content-transfer-encoding' encounterd: {0}", transferEncoding);
+                            writer.WriteLine("------Encoded Content-------");
+                            await writer.FlushAsync();
+                            await encodedContent.CopyToAsync(unEncodedContent);
+                        }
+                        break;
+                }
+                return unEncodedContent;
+            }
+            catch (Exception ex)
+            {
+                using (var writer = new StreamWriter(unEncodedContent, Encoding.ASCII))
+                {
+                    writer.WriteLine(ex.Message);
+                    writer.WriteLine("------Encoded Content-------");
+                    await writer.FlushAsync();
+                    await encodedContent.CopyToAsync(unEncodedContent);
+                    return unEncodedContent;
+                }
+            }
         }
     }
 }

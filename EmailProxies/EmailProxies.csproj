@@ -104,6 +104,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <None Include="EmailProxies.cd" />
     <None Include="EmailProxies.manifest" />
     <None Include="project.json" />
     <PRIResource Include="Strings\Resources.resw" />
@@ -111,9 +112,10 @@
   <ItemGroup>
     <Compile Include="BufferedByteReader.cs" />
     <Compile Include="CustomExtensions.cs" />
-    <Compile Include="EmailInterpreter\BodyPart.cs" />
+    <Compile Include="EmailInterpreter\Body.cs" />
     <Compile Include="EmailInterpreter\BodyPartReader.cs" />
     <Compile Include="EmailInterpreter\ContentTypeFieldValue.cs" />
+    <Compile Include="EmailInterpreter\MemoryByteReader.cs" />
     <Compile Include="EmailInterpreter\MailMethods.cs" />
     <Compile Include="EmailInterpreter\TextBody.cs" />
     <Compile Include="EmailInterpreter\UnstructuredTextFieldValue.cs" />
