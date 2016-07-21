@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="PopMail.EmailProxies.EmailInterpreter.Header" Collapsed="true">
+    <Position X="4.75" Y="6" Width="1.5" />
+    <AssociationLine Name="IdentificationFieldValue" Type="PopMail.EmailProxies.EmailInterpreter.IdentificationFieldValue" ManuallyRouted="true" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="4.75" Y="6.188" />
+        <Point X="4.75" Y="6.201" />
+        <Point X="3" Y="6.201" />
+        <Point X="3" Y="3.191" />
+      </Path>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AgAAABAAAAAAAEAAAIgAAQCAAAgYAAAGEAAAAIAIoBg=</HashCode>
+      <FileName>EmailInterpreter\Header.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="AddressListFieldValue" />
+      <Property Name="IdentificationFieldValue" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="PopMail.EmailProxies.EmailInterpreter.DateFieldValue" Collapsed="true">
+    <Position X="7.25" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAIAAAAAAEIAAQAAAAAAAAAAAAAAAgAAAAAAA=</HashCode>
+      <FileName>EmailInterpreter\DateFieldValue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PopMail.EmailProxies.EmailInterpreter.FieldValue" Collapsed="true">
+    <Position X="5.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAAAAAAAAARAAAARAAAAAAAAAAAAAAAAAEAAIAAQAAE=</HashCode>
+      <FileName>EmailInterpreter\FieldValue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PopMail.EmailProxies.EmailInterpreter.MimeFieldFieldValue" Collapsed="true">
+    <Position X="3.5" Y="3.25" Width="1.5" />
+    <InheritanceLine Type="PopMail.EmailProxies.EmailInterpreter.FieldValue" ManuallyRouted="true">
+      <Path>
+        <Point X="6" Y="1.062" />
+        <Point X="6" Y="2.84" />
+        <Point X="4.25" Y="2.84" />
+        <Point X="4.25" Y="3.25" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAQAAAEAAAEAAIAAAAAAAAAAEAAAAAAAAAAAABAA=</HashCode>
+      <FileName>EmailInterpreter\MimeFieldFieldValue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PopMail.EmailProxies.EmailInterpreter.UnstructuredTextFieldValue" Collapsed="true">
+    <Position X="5.25" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAgAAAAAAA=</HashCode>
+      <FileName>EmailInterpreter\UnstructuredTextFieldValue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PopMail.EmailProxies.EmailInterpreter.AddressListFieldValue" Collapsed="true">
+    <Position X="9.25" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAEAAAAAEAAAAIAAAAAAAAABAAAAAAAIAAAAAAAA=</HashCode>
+      <FileName>EmailInterpreter\AddressListFieldValue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PopMail.EmailProxies.EmailInterpreter.IdentificationFieldValue" Collapsed="true">
+    <Position X="2.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAIAAQAAAAAAAAAAAAAAAAAAIAAAA=</HashCode>
+      <FileName>EmailInterpreter\IdentificationFieldValue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PopMail.EmailProxies.EmailInterpreter.HeaderIgnoreFieldValue" Collapsed="true">
+    <Position X="1.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>EmailInterpreter\HeaderIgnoreFieldValue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PopMail.EmailProxies.EmailInterpreter.ContentTypeFieldValue" Collapsed="true">
+    <Position X="3.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AJQCABAAAIABgAAAIMAAAAQAAAAgQAIAAQIAAgCABAA=</HashCode>
+      <FileName>EmailInterpreter\ContentTypeFieldValue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
